@@ -1,5 +1,8 @@
 """Entry point for infodisplay."""
 
+import logging
+import sys
+
 from infodisplay.config import load_config
 
 
@@ -28,25 +31,63 @@ def run_fetch_test(config):
             )
 
 
+def run_render_test():
+    """Render mock departures to test_output.png."""
+    from infodisplay.renderer import run_render_test as _run_render_test
+
+    output_path = _run_render_test()
+    print(f"Rendered test output to: {output_path}")
+
+
+def run_search(config):
+    """Search for stations by name."""
+    from infodisplay.api import BVGClient
+
+    client = BVGClient(config)
+    results = client.search_stations(config.search)
+    if not results:
+        print("No stations found.")
+        return
+    for i, loc in enumerate(results, 1):
+        name = loc.get("name", "Unknown")
+        loc_id = loc.get("id", "?")
+        print(f"  {i}. {name}  [ID: {loc_id}]")
+
+
+def run_app(config):
+    """Run the full Pygame display application."""
+    from infodisplay.app import InfoDisplayApp
+
+    app = InfoDisplayApp(config)
+    app.run()
+
+
 def main():
     config = load_config()
 
-    if config.fetch_test:
-        run_fetch_test(config)
-        return
+    # Set up logging
+    level = logging.DEBUG if config.debug else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
 
-    if config.search:
-        from infodisplay.api import BVGClient
-
-        client = BVGClient(config)
-        results = client.search_stations(config.search)
-        for i, loc in enumerate(results, 1):
-            name = loc.get("name", "Unknown")
-            loc_id = loc.get("id", "?")
-            print(f"  {i}. {name}  [ID: {loc_id}]")
-        return
-
-    print("infodisplay - use --fetch-test, --render-test, or --search")
+    try:
+        if config.fetch_test:
+            run_fetch_test(config)
+        elif config.render_test:
+            run_render_test()
+        elif config.search:
+            run_search(config)
+        else:
+            run_app(config)
+    except KeyboardInterrupt:
+        print("\nShutting down.")
+        sys.exit(0)
+    except Exception as e:
+        logging.getLogger(__name__).error("Unexpected error: %s", e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
