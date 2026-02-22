@@ -50,9 +50,18 @@ def parse_departure(raw: dict) -> Departure:
         elif r.get("type") == "warning" and r.get("text"):
             remarks.append(html.unescape(r["text"]))
 
+    line_name = line.get("name", "")
+    line_product = line.get("product", "")
+    # Prefix tram lines without "M" with "M" for consistency with MetroTram branding
+    if line_product == "tram" and line_name and not line_name.startswith("M"):
+        line_name = f"M{line_name}"
+    # Prefix bus lines with "B"
+    if line_product == "bus" and line_name and not line_name.startswith("B"):
+        line_name = f"B{line_name}"
+
     return Departure(
-        line_name=line.get("name", ""),
-        line_product=line.get("product", ""),
+        line_name=line_name,
+        line_product=line_product,
         direction=raw.get("direction", "").replace("⟲", "").replace("⟳", "").strip(),
         when=raw.get("when"),
         planned_when=raw.get("plannedWhen"),
@@ -68,6 +77,7 @@ class StationContext:
     station_id: str
     station_name: str
     walking_minutes: int = 5
+    lines: list[str] = field(default_factory=list)
     departures: list[Departure] = field(default_factory=list)
     last_fetch: float = 0.0
 

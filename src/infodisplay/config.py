@@ -15,6 +15,7 @@ class StationConfig:
     id: str = "900023201"
     name: str = ""
     walking_minutes: int = 5
+    lines: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -23,6 +24,7 @@ class DisplayConfig:
     height: int = 180
     fullscreen: bool = False
     fps: int = 30
+    show_remarks: bool = True
     background_color: list[int] = field(default_factory=lambda: [0, 0, 0])
     text_color: list[int] = field(default_factory=lambda: [255, 170, 0])
 
@@ -61,6 +63,13 @@ class FontConfig:
 
 
 @dataclass
+class WeatherConfig:
+    latitude: float = 52.5170  # Berlin Friedrichshain
+    longitude: float = 13.4540
+    refresh_seconds: int = 600  # 10 minutes
+
+
+@dataclass
 class Config:
     stations: list[StationConfig] = field(default_factory=lambda: [StationConfig()])
     rotation: RotationConfig = field(default_factory=RotationConfig)
@@ -68,6 +77,7 @@ class Config:
     refresh: RefreshConfig = field(default_factory=RefreshConfig)
     filters: FilterConfig = field(default_factory=FilterConfig)
     fonts: FontConfig = field(default_factory=FontConfig)
+    weather: WeatherConfig = field(default_factory=WeatherConfig)
     # CLI-only flags (not in YAML)
     search: str | None = None
     fetch_test: bool = False
@@ -92,6 +102,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
                 id=str(s.get("id", "900023201")),
                 name=s.get("name", ""),
                 walking_minutes=s.get("walking_minutes", 5),
+                lines=s.get("lines", []),
             )
             for s in data["stations"]
         ]
@@ -103,7 +114,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "display" in data:
         d = data["display"]
-        for key in ("width", "height", "fullscreen", "fps", "background_color", "text_color"):
+        for key in ("width", "height", "fullscreen", "fps", "show_remarks", "background_color", "text_color"):
             if key in d:
                 setattr(config.display, key, d[key])
 
@@ -124,6 +135,12 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
         for key in ("font_header", "font_main", "font_remark", "station_name_size", "header_size", "departure_size", "remark_size"):
             if key in fonts:
                 setattr(config.fonts, key, fonts[key])
+
+    if "weather" in data:
+        w = data["weather"]
+        for key in ("latitude", "longitude", "refresh_seconds"):
+            if key in w:
+                setattr(config.weather, key, w[key])
 
 
 

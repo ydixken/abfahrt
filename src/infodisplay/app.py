@@ -10,6 +10,7 @@ from infodisplay.config import Config
 from infodisplay.display import DepartureDisplay, render_error
 from infodisplay.models import StationContext
 from infodisplay.renderer import DepartureRenderer
+from infodisplay.weather import WeatherData, fetch_weather
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class InfoDisplayApp:
             header_size=config.fonts.header_size,
             departure_size=config.fonts.departure_size,
             remark_size=config.fonts.remark_size,
+            show_remarks=config.display.show_remarks,
         )
         self.display = DepartureDisplay(
             width=config.display.width,
@@ -36,6 +38,7 @@ class InfoDisplayApp:
         self.stations: list[StationContext] = []
         self.active_station_index = 0
         self.last_rotation_time = 0.0
+        self.weather: WeatherData | None = None
         self.clock = __import__("pygame").time.Clock()
 
     def _resolve_stations(self) -> None:
@@ -54,6 +57,7 @@ class InfoDisplayApp:
                     station_id=station_cfg.id,
                     station_name=name,
                     walking_minutes=station_cfg.walking_minutes,
+                    lines=station_cfg.lines,
                 )
             )
 
@@ -77,6 +81,22 @@ class InfoDisplayApp:
             )
             if not ctx.departures:
                 ctx.last_fetch = time.time()
+
+    def _refresh_weather(self) -> None:
+        """Fetch weather if stale or missing."""
+        cfg = self.config.weather
+        if self.weather and time.time() - self.weather.fetch_time < cfg.refresh_seconds:
+            return
+        try:
+            logger.debug("Fetching weather ...")
+            self.weather = fetch_weather(cfg.latitude, cfg.longitude)
+            logger.info(
+                "Weather: %.0f° (%.0f/%.0f°), precip %s",
+                self.weather.current_temp, self.weather.daily_low,
+                self.weather.daily_high, self.weather.precip_summary,
+            )
+        except Exception:
+            logger.warning("Failed to fetch weather", exc_info=True)
 
     def _check_rotation(self, scrolling_done: bool) -> None:
         """Rotate to the next station if the interval has elapsed and scrolling is done."""
@@ -106,7 +126,8 @@ class InfoDisplayApp:
 
             self.last_rotation_time = time.time()
 
-            # Initial fetch for all stations
+            # Initial fetch for weather + all stations
+            self._refresh_weather()
             for ctx in self.stations:
                 self._refresh_station(ctx)
 
@@ -117,24 +138,29 @@ class InfoDisplayApp:
                 if not running:
                     break
 
-                # Refresh stations that need it
+                # Refresh weather + stations that need it
+                self._refresh_weather()
                 for ctx in self.stations:
                     self._refresh_station(ctx)
 
-                # Render the active station (filter by walking time)
+                # Render the active station (filter by walking time + line)
+                # Show departures within hurry tolerance (3 min before walking time)
                 ctx = self.stations[self.active_station_index]
                 walk = ctx.walking_minutes
+                hurry = max(0, walk - 3)
                 visible = [
                     d for d in ctx.departures
-                    if d.minutes_until is None or d.minutes_until >= walk
+                    if d.minutes_until is None or d.minutes_until >= hurry
                 ]
+                if ctx.lines:
+                    visible = [d for d in visible if d.line_name in ctx.lines]
                 # Fall back to all departures if filter removes everything
                 if not visible:
                     visible = ctx.departures
 
                 scrolling_done = True
                 if visible:
-                    img, scrolling_done = self.renderer.render(visible, ctx.station_name, walk)
+                    img, scrolling_done = self.renderer.render(visible, ctx.station_name, walk, self.weather)
                 elif ctx.last_fetch > 0:
                     img = render_error(
                         "Keine Abfahrten",
