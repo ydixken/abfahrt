@@ -65,6 +65,26 @@ class DepartureRenderer:
         self.first_row_y = self.separator_y + 4
         self.row_height = departure_size + 6
 
+    def _truncate_text(
+        self,
+        text: str,
+        font: ImageFont.FreeTypeFont,
+        max_width: int,
+    ) -> str:
+        """Truncate text with ellipsis if it exceeds max_width pixels."""
+        if not text:
+            return ""
+        bbox = font.getbbox(text)
+        if bbox[2] - bbox[0] <= max_width:
+            return text
+        ellipsis = "…"
+        for end in range(len(text), 0, -1):
+            candidate = text[:end] + ellipsis
+            bbox = font.getbbox(candidate)
+            if bbox[2] - bbox[0] <= max_width:
+                return candidate
+        return ellipsis
+
     def render(self, departures: list[Departure], station_name: str) -> Image.Image:
         """Render a departure board image.
 
@@ -129,34 +149,57 @@ class DepartureRenderer:
         y: int,
     ) -> None:
         """Draw a single departure row."""
-        # Linie
-        draw.text(
-            (int(self.width * COL_LINIE), y), dep.line_name,
-            fill=AMBER, font=self.font_departure,
-        )
-
-        # Ziel (destination)
-        draw.text(
-            (int(self.width * COL_ZIEL), y), dep.direction,
-            fill=AMBER, font=self.font_departure,
-        )
-
-        # Remarks (smaller font, y-offset down a few pixels)
-        if dep.remarks:
-            remark_text = ", ".join(dep.remarks)
-            remark_y_offset = (self.row_height - self.font_remark.size) // 2
-            draw.text(
-                (int(self.width * COL_REMARKS), y + remark_y_offset), remark_text,
-                fill=AMBER, font=self.font_remark,
-            )
-
-        # Abfahrt von (station name + S-Bahn icon)
+        # Column pixel boundaries (with padding between columns)
+        x_linie = int(self.width * COL_LINIE)
+        x_ziel = int(self.width * COL_ZIEL)
+        x_remarks = int(self.width * COL_REMARKS)
         x_von = int(self.width * COL_ABFAHRT_VON)
-        draw.text((x_von, y), station_name, fill=AMBER, font=self.font_departure)
+        x_time = int(self.width * COL_ABFAHRT_IN)
+        pad = 8  # pixel gap between columns
+
+        max_w_linie = x_ziel - x_linie - pad
+        max_w_ziel = x_remarks - x_ziel - pad
+        max_w_remarks = x_von - x_remarks - pad
+        # Reserve space for icon after station name
+        icon_space = (self.sbahn_icon.width + 4) if self.sbahn_icon else 0
+        max_w_von = x_time - x_von - pad - icon_space - 80  # 80px for time column
+
+        # Linie (handle missing)
+        line_text = self._truncate_text(
+            dep.line_name or "", self.font_departure, max_w_linie,
+        )
+        if line_text:
+            draw.text((x_linie, y), line_text, fill=AMBER, font=self.font_departure)
+
+        # Ziel (destination, handle missing + truncate)
+        ziel_text = self._truncate_text(
+            dep.direction or "", self.font_departure, max_w_ziel,
+        )
+        if ziel_text:
+            draw.text((x_ziel, y), ziel_text, fill=AMBER, font=self.font_departure)
+
+        # Remarks (smaller font, y-offset down a few pixels, truncate)
+        if dep.remarks:
+            remark_text = self._truncate_text(
+                ", ".join(dep.remarks), self.font_remark, max_w_remarks,
+            )
+            if remark_text:
+                remark_y_offset = (self.row_height - self.font_remark.size) // 2
+                draw.text(
+                    (x_remarks, y + remark_y_offset), remark_text,
+                    fill=AMBER, font=self.font_remark,
+                )
+
+        # Abfahrt von (station name + S-Bahn icon, truncate)
+        von_text = self._truncate_text(
+            station_name or "", self.font_departure, max_w_von,
+        )
+        if von_text:
+            draw.text((x_von, y), von_text, fill=AMBER, font=self.font_departure)
 
         # Add S-Bahn icon after station name if product is suburban
-        if self.sbahn_icon and dep.line_product == "suburban":
-            bbox = draw.textbbox((x_von, y), station_name, font=self.font_departure)
+        if self.sbahn_icon and dep.line_product == "suburban" and von_text:
+            bbox = draw.textbbox((x_von, y), von_text, font=self.font_departure)
             icon_x = bbox[2] + 4
             icon_y = y + (self.row_height - self.sbahn_icon.height) // 2
             img.paste(
@@ -178,7 +221,7 @@ class DepartureRenderer:
         bbox = draw.textbbox((0, 0), time_text, font=self.font_departure)
         text_w = bbox[2] - bbox[0]
         draw.text(
-            (int(self.width * COL_ABFAHRT_IN) - text_w, y), time_text,
+            (x_time - text_w, y), time_text,
             fill=AMBER, font=self.font_departure,
         )
 

@@ -57,13 +57,19 @@ class InfoDisplayApp:
         if not ctx.needs_refresh(self.config.refresh.interval_seconds):
             return
         try:
+            logger.debug("Fetching departures for %s ...", ctx.station_name)
+            t0 = time.time()
             ctx.departures = self.client.fetch_parsed_departures(ctx.station_id)
+            elapsed = time.time() - t0
             ctx.last_fetch = time.time()
             logger.info(
-                "Fetched %d departures for %s", len(ctx.departures), ctx.station_name
+                "Fetched %d departures for %s (%.1fs)",
+                len(ctx.departures), ctx.station_name, elapsed,
             )
         except Exception:
-            logger.warning("Failed to fetch departures for %s", ctx.station_name)
+            logger.warning(
+                "Failed to fetch departures for %s", ctx.station_name, exc_info=True
+            )
             if not ctx.departures:
                 ctx.last_fetch = time.time()
 
@@ -80,6 +86,12 @@ class InfoDisplayApp:
     def run(self) -> None:
         """Run the main application loop."""
         try:
+            logger.info(
+                "Starting InfoDisplayApp with %d station(s), refresh=%ds, rotation=%ds",
+                len(self.config.stations),
+                self.config.refresh.interval_seconds,
+                self.config.rotation.interval_seconds,
+            )
             self._resolve_stations()
 
             if not self.stations:
@@ -92,6 +104,7 @@ class InfoDisplayApp:
             for ctx in self.stations:
                 self._refresh_station(ctx)
 
+            logger.info("Entering main loop")
             running = True
             while running:
                 running = self.display.handle_events()

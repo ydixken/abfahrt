@@ -102,3 +102,53 @@ class TestDepartureRenderer:
         dep = _make_departure(line_name="U1", line_product="subway")
         img = renderer.render([dep], "Test Station")
         assert isinstance(img, Image.Image)
+
+    def test_long_destination_truncated(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure(
+            direction="S+U Berlin Hauptbahnhof - Lehrter Bahnhof (Berlin) über Friedrichstraße"
+        )
+        img = renderer.render([dep], "S Savignyplatz (Berlin)")
+        assert img.size == (1520, 180)
+
+    def test_long_line_name_truncated(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure(line_name="RE10 Express Extra Long Name")
+        img = renderer.render([dep], "Test Station")
+        assert img.size == (1520, 180)
+
+    def test_long_remarks_truncated(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure(
+            remarks=["Fahrradmitnahme möglich, Bauarbeiten zwischen Westkreuz und Charlottenburg"]
+        )
+        img = renderer.render([dep], "Test Station")
+        assert img.size == (1520, 180)
+
+    def test_missing_line_name(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure(line_name="")
+        img = renderer.render([dep], "Test Station")
+        assert isinstance(img, Image.Image)
+
+    def test_missing_direction(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure(direction="")
+        img = renderer.render([dep], "Test Station")
+        assert isinstance(img, Image.Image)
+
+    def test_missing_when_shows_dash(self):
+        renderer = DepartureRenderer()
+        dep = Departure(
+            line_name="S7", line_product="suburban",
+            direction="S Potsdam", when=None, planned_when=None,
+            delay_seconds=None, platform=None, remarks=[], is_cancelled=False,
+        )
+        img = renderer.render([dep], "Test Station")
+        assert isinstance(img, Image.Image)
+
+    def test_empty_station_name(self):
+        renderer = DepartureRenderer()
+        dep = _make_departure()
+        img = renderer.render([dep], "")
+        assert isinstance(img, Image.Image)

@@ -73,20 +73,27 @@ def main():
         stream=sys.stderr,
     )
 
+    logger = logging.getLogger(__name__)
+    logger.debug("Config loaded: %d station(s), debug=%s", len(config.stations), config.debug)
+
     try:
         if config.fetch_test:
+            logger.info("Running fetch test")
             run_fetch_test(config)
         elif config.render_test:
+            logger.info("Running render test")
             run_render_test()
         elif config.search:
+            logger.info("Searching for station: %s", config.search)
             run_search(config)
         else:
+            logger.info("Starting display application")
             run_app(config)
     except KeyboardInterrupt:
         print("\nShutting down.")
         sys.exit(0)
     except Exception as e:
-        logging.getLogger(__name__).error("Unexpected error: %s", e)
+        logger.error("Unexpected error: %s", e, exc_info=True)
         sys.exit(1)
 
 

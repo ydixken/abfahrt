@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pygame
 from PIL import Image, ImageDraw, ImageFont
+
+logger = logging.getLogger(__name__)
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _FONTS_DIR = _ROOT / "fonts"
@@ -26,6 +29,8 @@ class DepartureDisplay:
         pygame.display.set_caption("BVG Abfahrtsanzeige")
         self.width = width
         self.height = height
+        mode = "fullscreen" if fullscreen else f"{width}x{height}"
+        logger.info("Pygame display initialized (%s)", mode)
 
     def update(self, pil_image: Image.Image) -> None:
         """Convert a PIL Image to a Pygame surface and display it."""
@@ -38,13 +43,16 @@ class DepartureDisplay:
         """Process Pygame events. Returns False if the app should quit."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                logger.info("Received QUIT event")
                 return False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                logger.info("Received ESC keypress")
                 return False
         return True
 
     def close(self) -> None:
         """Shut down the Pygame display."""
+        logger.info("Closing Pygame display")
         pygame.quit()
 
 
