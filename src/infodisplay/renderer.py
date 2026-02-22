@@ -40,13 +40,14 @@ class DepartureRenderer:
         self.width = width
         self.height = height
 
-        # Load fonts
-        bold_path = str(_FONTS_DIR / "DotMatrix-Bold.ttf")
-        regular_path = str(_FONTS_DIR / "DotMatrix-Regular.ttf")
+        # Load fonts (FF Transit — official BVG typeface)
+        header_path = str(_FONTS_DIR / "Transit_Wide_Bold.ttf")
+        main_path = str(_FONTS_DIR / "Transit_Bold.ttf")
+        remark_path = str(_FONTS_DIR / "Transit_Condensed_Normal.ttf")
 
-        self.font_header = ImageFont.truetype(bold_path, header_size)
-        self.font_departure = ImageFont.truetype(regular_path, departure_size)
-        self.font_remark = ImageFont.truetype(regular_path, remark_size)
+        self.font_header = ImageFont.truetype(header_path, header_size)
+        self.font_departure = ImageFont.truetype(main_path, departure_size)
+        self.font_remark = ImageFont.truetype(remark_path, remark_size)
 
         # Load S-Bahn icon
         icon_path = _ASSETS_DIR / "sbahn_icon.png"

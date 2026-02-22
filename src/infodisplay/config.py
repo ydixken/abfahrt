@@ -50,6 +50,9 @@ class RotationConfig:
 
 @dataclass
 class FontConfig:
+    font_header: str = "Transit_Wide_Bold.ttf"
+    font_main: str = "Transit_Bold.ttf"
+    font_remark: str = "Transit_Condensed_Normal.ttf"
     header_size: int = 16
     departure_size: int = 16
     remark_size: int = 13
@@ -115,7 +118,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "fonts" in data:
         fonts = data["fonts"]
-        for key in ("header_size", "departure_size", "remark_size"):
+        for key in ("font_header", "font_main", "font_remark", "header_size", "departure_size", "remark_size"):
             if key in fonts:
                 setattr(config.fonts, key, fonts[key])
 
