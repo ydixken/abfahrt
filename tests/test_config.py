@@ -21,7 +21,7 @@ class TestConfigDefaults:
     def test_default_refresh(self):
         config = load_config(yaml_path="/nonexistent.yaml", cli_args=[])
         assert config.refresh.interval_seconds == 30
-        assert config.refresh.departure_count == 8
+        assert config.refresh.departure_count == 20
 
     def test_default_filters(self):
         config = load_config(yaml_path="/nonexistent.yaml", cli_args=[])
@@ -39,8 +39,8 @@ class TestConfigDefaults:
 
     def test_default_fonts(self):
         config = load_config(yaml_path="/nonexistent.yaml", cli_args=[])
-        assert config.fonts.header_size == 16
-        assert config.fonts.departure_size == 16
+        assert config.fonts.header_size == 13
+        assert config.fonts.departure_size == 18
         assert config.fonts.remark_size == 13
 
     def test_default_cli_flags(self):

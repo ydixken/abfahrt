@@ -14,6 +14,7 @@ import yaml
 class StationConfig:
     id: str = "900023201"
     name: str = ""
+    walking_minutes: int = 5
 
 
 @dataclass
@@ -29,7 +30,7 @@ class DisplayConfig:
 @dataclass
 class RefreshConfig:
     interval_seconds: int = 30
-    departure_count: int = 8
+    departure_count: int = 20
 
 
 @dataclass
@@ -53,8 +54,9 @@ class FontConfig:
     font_header: str = "Transit_Wide_Bold.ttf"
     font_main: str = "Transit_Bold.ttf"
     font_remark: str = "Transit_Condensed_Normal.ttf"
-    header_size: int = 16
-    departure_size: int = 16
+    station_name_size: int = 20
+    header_size: int = 13
+    departure_size: int = 18
     remark_size: int = 13
 
 
@@ -89,6 +91,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
             StationConfig(
                 id=str(s.get("id", "900023201")),
                 name=s.get("name", ""),
+                walking_minutes=s.get("walking_minutes", 5),
             )
             for s in data["stations"]
         ]
@@ -118,9 +121,10 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "fonts" in data:
         fonts = data["fonts"]
-        for key in ("font_header", "font_main", "font_remark", "header_size", "departure_size", "remark_size"):
+        for key in ("font_header", "font_main", "font_remark", "station_name_size", "header_size", "departure_size", "remark_size"):
             if key in fonts:
                 setattr(config.fonts, key, fonts[key])
+
 
 
 def _build_parser() -> argparse.ArgumentParser:

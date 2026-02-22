@@ -23,6 +23,7 @@ class InfoDisplayApp:
         self.renderer = DepartureRenderer(
             width=config.display.width,
             height=config.display.height,
+            station_name_size=config.fonts.station_name_size,
             header_size=config.fonts.header_size,
             departure_size=config.fonts.departure_size,
             remark_size=config.fonts.remark_size,
@@ -49,7 +50,11 @@ class InfoDisplayApp:
                     logger.warning("Could not resolve name for station %s", station_cfg.id)
                     name = f"Station {station_cfg.id}"
             self.stations.append(
-                StationContext(station_id=station_cfg.id, station_name=name)
+                StationContext(
+                    station_id=station_cfg.id,
+                    station_name=name,
+                    walking_minutes=station_cfg.walking_minutes,
+                )
             )
 
     def _refresh_station(self, ctx: StationContext) -> None:
@@ -73,14 +78,15 @@ class InfoDisplayApp:
             if not ctx.departures:
                 ctx.last_fetch = time.time()
 
-    def _check_rotation(self) -> None:
-        """Rotate to the next station if the interval has elapsed."""
+    def _check_rotation(self, scrolling_done: bool) -> None:
+        """Rotate to the next station if the interval has elapsed and scrolling is done."""
         if len(self.stations) <= 1:
             return
         now = time.time()
-        if now - self.last_rotation_time >= self.config.rotation.interval_seconds:
+        if now - self.last_rotation_time >= self.config.rotation.interval_seconds and scrolling_done:
             self.active_station_index = (self.active_station_index + 1) % len(self.stations)
             self.last_rotation_time = now
+            self.renderer._scroll_start = time.time()
             logger.info("Rotated to station: %s", self.stations[self.active_station_index].station_name)
 
     def run(self) -> None:
@@ -115,13 +121,20 @@ class InfoDisplayApp:
                 for ctx in self.stations:
                     self._refresh_station(ctx)
 
-                # Check rotation timer
-                self._check_rotation()
-
-                # Render the active station
+                # Render the active station (filter by walking time)
                 ctx = self.stations[self.active_station_index]
-                if ctx.departures:
-                    img = self.renderer.render(ctx.departures, ctx.station_name)
+                walk = ctx.walking_minutes
+                visible = [
+                    d for d in ctx.departures
+                    if d.minutes_until is None or d.minutes_until >= walk
+                ]
+                # Fall back to all departures if filter removes everything
+                if not visible:
+                    visible = ctx.departures
+
+                scrolling_done = True
+                if visible:
+                    img, scrolling_done = self.renderer.render(visible, ctx.station_name, walk)
                 elif ctx.last_fetch > 0:
                     img = render_error(
                         "Keine Abfahrten",
@@ -134,6 +147,9 @@ class InfoDisplayApp:
                         self.config.display.width,
                         self.config.display.height,
                     )
+
+                # Check rotation after rendering (needs scroll status)
+                self._check_rotation(scrolling_done)
 
                 self.display.update(img)
                 self.clock.tick(self.config.display.fps)

@@ -1,15 +1,20 @@
 stations:
-  - id: "900023201"
-    name: ""
-  - id: "900100003"
-    name: ""
+  - id: "900120013"
+    name: "Tram Holteistrasse"
+    walking_minutes: 5
+  - id: "900120009"
+    name: "U Samariterstrasse"
+    walking_minutes: 10
+  - id: "900120003"
+    name: "S Ostkreuz"
+    walking_minutes: 10
 
 rotation:
   interval_seconds: 10
 
 display:
-  width: 1520
-  height: 180
+  width: 1024
+  height: 256
   fullscreen: false
   fps: 30
   background_color: [0, 0, 0]
@@ -17,7 +22,7 @@ display:
 
 refresh:
   interval_seconds: 30
-  departure_count: 8
+  departure_count: 50
 
 filters:
   suburban: true

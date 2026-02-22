@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -47,12 +48,12 @@ def parse_departure(raw: dict) -> Departure:
         if r.get("code") == "FK":
             remarks.append("Fahrradmitnahme möglich")
         elif r.get("type") == "warning" and r.get("text"):
-            remarks.append(r["text"])
+            remarks.append(html.unescape(r["text"]))
 
     return Departure(
         line_name=line.get("name", ""),
         line_product=line.get("product", ""),
-        direction=raw.get("direction", ""),
+        direction=raw.get("direction", "").replace("⟲", "").replace("⟳", "").strip(),
         when=raw.get("when"),
         planned_when=raw.get("plannedWhen"),
         delay_seconds=raw.get("delay"),
@@ -66,6 +67,7 @@ def parse_departure(raw: dict) -> Departure:
 class StationContext:
     station_id: str
     station_name: str
+    walking_minutes: int = 5
     departures: list[Departure] = field(default_factory=list)
     last_fetch: float = 0.0
 
