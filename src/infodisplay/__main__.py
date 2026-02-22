@@ -31,11 +31,11 @@ def run_fetch_test(config):
             )
 
 
-def run_render_test():
+def run_render_test(config):
     """Render mock departures to test_output.png."""
     from infodisplay.renderer import run_render_test as _run_render_test
 
-    output_path = _run_render_test()
+    output_path = _run_render_test(config)
     print(f"Rendered test output to: {output_path}")
 
 
@@ -82,7 +82,7 @@ def main():
             run_fetch_test(config)
         elif config.render_test:
             logger.info("Running render test")
-            run_render_test()
+            run_render_test(config)
         elif config.search:
             logger.info("Searching for station: %s", config.search)
             run_search(config)

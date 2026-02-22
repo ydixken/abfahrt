@@ -41,6 +41,9 @@ class DepartureRenderer:
         self,
         width: int = 1520,
         height: int = 180,
+        font_header: str = "Transit_Wide_Bold.ttf",
+        font_main: str = "Transit_Bold.ttf",
+        font_remark: str = "Transit_Condensed_Normal.ttf",
         station_name_size: int = 20,
         header_size: int = 13,
         departure_size: int = 18,
@@ -60,10 +63,10 @@ class DepartureRenderer:
         # Scaled padding used throughout layout
         self.pad = max(2, round(8 * self.scale))
 
-        # Load fonts (FF Transit — official BVG typeface)
-        header_path = str(_FONTS_DIR / "Transit_Wide_Bold.ttf")
-        main_path = str(_FONTS_DIR / "Transit_Bold.ttf")
-        remark_path = str(_FONTS_DIR / "Transit_Condensed_Normal.ttf")
+        # Load fonts
+        header_path = str(_FONTS_DIR / font_header)
+        main_path = str(_FONTS_DIR / font_main)
+        remark_path = str(_FONTS_DIR / font_remark)
 
         self.font_station_name = ImageFont.truetype(
             header_path, station_name_size
@@ -167,7 +170,7 @@ class DepartureRenderer:
         cy = self.station_name_height // 2
         margin = max(2, round(4 * self.scale))
 
-        # Weather info (left-aligned)
+        # Weather info (left-aligned, smaller font)
         if weather is not None:
             weather_str = (
                 f"{weather.current_temp:.0f}°"
@@ -178,18 +181,18 @@ class DepartureRenderer:
                 (margin, cy),
                 weather_str,
                 fill=BLACK,
-                font=self.font_departure,
+                font=self.font_header,
                 anchor="lm",
             )
 
-        # Current time (right-aligned)
+        # Current time (right-aligned, smaller font)
         now = datetime.now()
         time_str = now.strftime("%H:%M")
         draw.text(
             (self.width - margin, cy),
             time_str,
             fill=BLACK,
-            font=self.font_departure,
+            font=self.font_header,
             anchor="rm",
         )
         # Station name (centered)
@@ -312,7 +315,6 @@ class DepartureRenderer:
         blink_on = (
             minutes is not None
             and hurry_threshold <= minutes <= walking_minutes
-            and dep.delay_minutes == 0
             and time.time() % BLINK_PERIOD < BLINK_PERIOD / 2
         )
 
@@ -320,7 +322,9 @@ class DepartureRenderer:
 
         # Linie (bold)
         line_text = self._truncate_text(
-            dep.line_name or "", self.font_linie, max_w_linie,
+            dep.line_name or "",
+            self.font_linie,
+            max_w_linie,
         )
         if line_text:
             draw.text((x_linie, y), line_text, fill=AMBER, font=self.font_linie)
@@ -335,17 +339,26 @@ class DepartureRenderer:
 
         # Ziel (destination)
         ziel_text = self._truncate_text(
-            dep.direction or "", self.font_departure, max_w_ziel,
+            dep.direction or "",
+            self.font_departure,
+            max_w_ziel,
         )
         if ziel_text:
-            draw.text((x_ziel, y), ziel_text, fill=AMBER, font=self.font_departure)
+            draw.text(
+                (x_ziel, y), ziel_text, fill=AMBER, font=self.font_departure
+            )
 
         # Remarks (fixed column, scrolling if overflow)
         if self.show_remarks and dep.remarks and max_w_remarks > 20:
             remark_text = ", ".join(dep.remarks)
             scroll_done = self._draw_scrolling_text(
-                img, remark_text, self.font_departure,
-                x_remarks, y, max_w_remarks, scroll_time,
+                img,
+                remark_text,
+                self.font_departure,
+                x_remarks,
+                y,
+                max_w_remarks,
+                scroll_time,
             )
 
         # Departure time column (actual time = planned + delay)
@@ -356,27 +369,41 @@ class DepartureRenderer:
         else:
             dep_time_text = "--:--"
 
-        # Minutes until departure (right-aligned)
-        if minutes is not None:
-            min_text = f"{minutes} min"
-        else:
-            min_text = "-- min"
+        # Split into three aligned parts: number, "min", delay
+        num_str = str(minutes) if minutes is not None else "--"
+        min_label = "min"
+        delay_text = f"+{dep.delay_minutes}" if dep.delay_minutes > 0 else ""
 
-        delay_text = f" (+{dep.delay_minutes})" if dep.delay_minutes > 0 else ""
-
-        # Measure widths
-        min_bbox = self.font_departure.getbbox(min_text)
-        min_w = min_bbox[2] - min_bbox[0]
+        # Measure widths for alignment
+        # Layout from right: "min" | delay | number (right-aligned in 2-digit slot)
+        # Result: 8+2min or 14min
+        two_digit_bbox = self.font_departure.getbbox("00")
+        two_digit_w = two_digit_bbox[2] - two_digit_bbox[0]
+        label_bbox = self.font_departure.getbbox(min_label)
+        label_w = label_bbox[2] - label_bbox[0]
+        num_bbox = self.font_departure.getbbox(num_str)
+        num_w = num_bbox[2] - num_bbox[0]
         delay_w = 0
         if delay_text:
             delay_bbox = self.font_departure.getbbox(delay_text)
             delay_w = delay_bbox[2] - delay_bbox[0]
 
-        # Position: right-aligned to edge, but not overlapping dep time column
+        label_x = x_time - label_w           # "min" right-aligned to edge
+        delay_x = label_x - delay_w          # "+2" left of "min"
+        num_x = delay_x - num_w              # number left of delay
+        num_slot_x = delay_x - two_digit_w   # 2-digit slot left edge
+
+        # Ensure gap between dep time and minutes area
         dep_time_bbox_m = self.font_departure.getbbox("00:00")
-        dep_time_end = x_dep_time + (dep_time_bbox_m[2] - dep_time_bbox_m[0]) + pad
-        total_w = min_w + delay_w
-        tx = max(dep_time_end, x_time - total_w)
+        dep_time_end = (
+            x_dep_time + (dep_time_bbox_m[2] - dep_time_bbox_m[0]) + pad
+        )
+        if num_slot_x < dep_time_end:
+            shift = dep_time_end - num_slot_x
+            num_slot_x += shift
+            num_x += shift
+            delay_x += shift
+            label_x += shift
 
         # Blink only the text of dep time + minutes (not background)
         if blink_on:
@@ -384,39 +411,74 @@ class DepartureRenderer:
             # Dep time text highlight
             dt_bbox = self.font_departure.getbbox(dep_time_text)
             dt_w = dt_bbox[2] - dt_bbox[0]
-            dt_h = dt_bbox[3] - dt_bbox[1]
             draw.rectangle(
-                [(x_dep_time - blink_margin, y + dt_bbox[1]),
-                 (x_dep_time + dt_w + blink_margin, y + dt_bbox[1] + dt_h + blink_margin)],
+                [
+                    (x_dep_time - blink_margin, y + dt_bbox[1] - blink_margin),
+                    (
+                        x_dep_time + dt_w + blink_margin,
+                        y + dt_bbox[3] + blink_margin,
+                    ),
+                ],
                 fill=AMBER,
             )
-            draw.text((x_dep_time, y), dep_time_text, fill=BLACK, font=self.font_departure)
-            # Minutes text highlight
-            full_text = min_text + delay_text
-            ft_bbox = self.font_departure.getbbox(full_text)
-            ft_h = ft_bbox[3] - ft_bbox[1]
+            draw.text(
+                (x_dep_time, y),
+                dep_time_text,
+                fill=BLACK,
+                font=self.font_departure,
+            )
+            # Minutes + delay text highlight
+            full_min_text = num_str + delay_text + min_label
+            ft_bbox = self.font_departure.getbbox(full_min_text)
             draw.rectangle(
-                [(tx - blink_margin, y + ft_bbox[1]),
-                 (tx + total_w + blink_margin, y + ft_bbox[1] + ft_h + blink_margin)],
+                [
+                    (num_slot_x - blink_margin, y + ft_bbox[1] - blink_margin),
+                    (
+                        x_time + blink_margin,
+                        y + ft_bbox[3] + blink_margin,
+                    ),
+                ],
                 fill=AMBER,
             )
-            draw.text((tx, y), min_text, fill=BLACK, font=self.font_departure)
+            draw.text((num_x, y), num_str, fill=BLACK, font=self.font_departure)
             if delay_text:
-                draw.text((tx + min_w, y), delay_text, fill=BLACK, font=self.font_departure)
+                draw.text(
+                    (delay_x, y),
+                    delay_text,
+                    fill=BLACK,
+                    font=self.font_departure,
+                )
+            draw.text(
+                (label_x, y), min_label, fill=BLACK, font=self.font_departure
+            )
         else:
-            draw.text((x_dep_time, y), dep_time_text, fill=AMBER, font=self.font_departure)
-            draw.text((tx, y), min_text, fill=AMBER, font=self.font_departure)
+            draw.text(
+                (x_dep_time, y),
+                dep_time_text,
+                fill=AMBER,
+                font=self.font_departure,
+            )
+            draw.text((num_x, y), num_str, fill=AMBER, font=self.font_departure)
             if delay_text:
-                draw.text((tx + min_w, y), delay_text, fill=AMBER, font=self.font_departure)
+                draw.text(
+                    (delay_x, y),
+                    delay_text,
+                    fill=AMBER,
+                    font=self.font_departure,
+                )
+            draw.text(
+                (label_x, y), min_label, fill=AMBER, font=self.font_departure
+            )
 
         return scroll_done
 
 
-def run_render_test() -> str:
+def run_render_test(config=None) -> str:
     """Render mock departures to test_output.png and return the file path.
 
     Creates mock Departure objects (no API needed), renders them via
     DepartureRenderer, and saves to test_output.png in the project root.
+    Uses config for display size and font settings if provided.
     """
     now = datetime.now(timezone.utc)
     departures = [

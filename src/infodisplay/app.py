@@ -24,6 +24,9 @@ class InfoDisplayApp:
         self.renderer = DepartureRenderer(
             width=config.display.width,
             height=config.display.height,
+            font_header=config.fonts.font_header,
+            font_main=config.fonts.font_main,
+            font_remark=config.fonts.font_remark,
             station_name_size=config.fonts.station_name_size,
             header_size=config.fonts.header_size,
             departure_size=config.fonts.departure_size,

@@ -11,7 +11,7 @@ stations:
     lines: ["S41", "S42"]
 
 rotation:
-  interval_seconds: 10
+  interval_seconds: 5
 
 display:
   width: 1024
@@ -27,6 +27,11 @@ display:
 refresh:
   interval_seconds: 30
   departure_count: 20
+
+fonts:
+  font_header: "JetBrainsMono-Bold.ttf"
+  font_main: "JetBrainsMono-Medium.ttf"
+  font_remark: "JetBrainsMono-Regular.ttf"
 
 filters:
   suburban: true
