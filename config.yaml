@@ -1,0 +1,29 @@
+stations:
+  - id: "900023201"
+    name: ""
+  - id: "900100003"
+    name: ""
+
+rotation:
+  interval_seconds: 10
+
+display:
+  width: 1520
+  height: 180
+  fullscreen: false
+  fps: 30
+  background_color: [0, 0, 0]
+  text_color: [255, 170, 0]
+
+refresh:
+  interval_seconds: 30
+  departure_count: 8
+
+filters:
+  suburban: true
+  subway: true
+  tram: true
+  bus: false
+  ferry: false
+  express: true
+  regional: true
