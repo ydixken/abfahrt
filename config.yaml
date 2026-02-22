@@ -14,8 +14,8 @@ rotation:
   interval_seconds: 5
 
 display:
-  width: 1024
-  height: 256
+  width: 2048
+  height: 512
   #width: 256
   #height: 64
   fullscreen: false

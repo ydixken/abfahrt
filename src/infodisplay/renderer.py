@@ -23,7 +23,7 @@ BLACK = (0, 0, 0)
 COL_LINIE = 0.02
 COL_ZIEL = 0.16
 COL_REMARKS = 0.58
-COL_DEP_TIME = 0.64
+COL_DEP_TIME = 0.73
 COL_ABFAHRT_IN = 0.98  # right-aligned
 
 # Scrolling parameters
@@ -68,9 +68,16 @@ class DepartureRenderer:
         main_path = str(_FONTS_DIR / font_main)
         remark_path = str(_FONTS_DIR / font_remark)
 
-        self.font_station_name = ImageFont.truetype(
-            header_path, station_name_size
-        )
+        # Station name uses ExtraBold if available, otherwise falls back to header font
+        extrabold_path = str(_FONTS_DIR / font_header.replace("Bold", "ExtraBold"))
+        try:
+            self.font_station_name = ImageFont.truetype(
+                extrabold_path, station_name_size
+            )
+        except OSError:
+            self.font_station_name = ImageFont.truetype(
+                header_path, station_name_size
+            )
         self.font_header = ImageFont.truetype(header_path, header_size)
         self.font_departure = ImageFont.truetype(main_path, departure_size)
         self.font_linie = ImageFont.truetype(header_path, departure_size)
@@ -371,7 +378,7 @@ class DepartureRenderer:
 
         # Split into three aligned parts: number, "min", delay
         num_str = str(minutes) if minutes is not None else "--"
-        min_label = "min"
+        min_label = "m"
         delay_text = f"+{dep.delay_minutes}" if dep.delay_minutes > 0 else ""
 
         # Measure widths for alignment
@@ -388,10 +395,10 @@ class DepartureRenderer:
             delay_bbox = self.font_departure.getbbox(delay_text)
             delay_w = delay_bbox[2] - delay_bbox[0]
 
-        label_x = x_time - label_w           # "min" right-aligned to edge
-        delay_x = label_x - delay_w          # "+2" left of "min"
-        num_x = delay_x - num_w              # number left of delay
-        num_slot_x = delay_x - two_digit_w   # 2-digit slot left edge
+        label_x = x_time - label_w  # "min" right-aligned to edge
+        delay_x = label_x - delay_w  # "+2" left of "min"
+        num_x = delay_x - num_w  # number left of delay
+        num_slot_x = delay_x - two_digit_w  # 2-digit slot left edge
 
         # Ensure gap between dep time and minutes area
         dep_time_bbox_m = self.font_departure.getbbox("00:00")
@@ -548,7 +555,21 @@ def run_render_test(config=None) -> str:
         ],
     )
 
-    renderer = DepartureRenderer()
+    if config is not None:
+        renderer = DepartureRenderer(
+            width=config.display.width,
+            height=config.display.height,
+            font_header=config.fonts.font_header,
+            font_main=config.fonts.font_main,
+            font_remark=config.fonts.font_remark,
+            station_name_size=config.fonts.station_name_size,
+            header_size=config.fonts.header_size,
+            departure_size=config.fonts.departure_size,
+            remark_size=config.fonts.remark_size,
+            show_remarks=config.display.show_remarks,
+        )
+    else:
+        renderer = DepartureRenderer()
     img, _ = renderer.render(
         departures, "S Savignyplatz (Berlin)", weather=mock_weather
     )
