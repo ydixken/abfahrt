@@ -138,20 +138,30 @@ finally:
     _time_mod.time = original_time
     renderer_mod.BLINK_PERIOD = original_blink
 
+# Convert all frames to palette mode for reliable GIF saving
+# Use a shared palette from the first frame for consistency
+palette_img = frames[0].quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+palette = palette_img.getpalette()
+
+p_frames = []
+for f in frames:
+    pf = f.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    p_frames.append(pf)
+
 # Save GIF
 output_path = Path(__file__).resolve().parent / "assets" / "demo.gif"
 output_path.parent.mkdir(exist_ok=True)
 
-if len(frames) > 1:
-    frames[0].save(
+if len(p_frames) > 1:
+    p_frames[0].save(
         str(output_path),
         save_all=True,
-        append_images=frames[1:],
+        append_images=p_frames[1:],
         duration=FRAME_MS,
         loop=0,
     )
 else:
-    frames[0].save(str(output_path))
+    p_frames[0].save(str(output_path))
 
-print(f"\nGenerated {len(frames)} frames, {len(frames) * FRAME_MS / 1000:.1f}s total")
+print(f"\nGenerated {len(p_frames)} frames, {len(p_frames) * FRAME_MS / 1000:.1f}s total")
 print(f"Saved to: {output_path}")
