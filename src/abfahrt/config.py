@@ -148,7 +148,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="infodisplay",
+        prog="abfahrt",
         description="BVG Train Departure Display",
     )
     parser.add_argument(

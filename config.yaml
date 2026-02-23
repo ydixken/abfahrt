@@ -27,7 +27,7 @@ display:
 
 refresh:
   interval_seconds: 30
-  departure_count: 20
+  departure_count: 50
 
 fonts:
   font_header: "JetBrainsMono-Bold.ttf"

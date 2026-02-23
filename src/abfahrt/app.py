@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 import time
 
-from infodisplay.api import BVGClient
-from infodisplay.config import Config
-from infodisplay.display import render_error
-from infodisplay.models import StationContext
-from infodisplay.renderer import DepartureRenderer
-from infodisplay.weather import WeatherData, fetch_weather
+from abfahrt.api import BVGClient
+from abfahrt.config import Config
+from abfahrt.display import render_error
+from abfahrt.models import StationContext
+from abfahrt.renderer import DepartureRenderer
+from abfahrt.weather import WeatherData, fetch_weather
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +35,13 @@ class InfoDisplayApp:
             show_items=config.display.show_items,
         )
         if config.display.mode == "ssd1322":
-            from infodisplay.ssd1322_display import SSD1322Display
+            from abfahrt.ssd1322_display import SSD1322Display
             self.display = SSD1322Display(
                 width=config.display.width,
                 height=config.display.height,
             )
         else:
-            from infodisplay.display import DepartureDisplay
+            from abfahrt.display import DepartureDisplay
             self.display = DepartureDisplay(
                 width=config.display.width,
                 height=config.display.height,

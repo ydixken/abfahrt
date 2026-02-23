@@ -1,9 +1,9 @@
-"""Tests for infodisplay.models."""
+"""Tests for abfahrt.models."""
 
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from infodisplay.models import Departure, StationContext, parse_departure
+from abfahrt.models import Departure, StationContext, parse_departure
 
 
 class TestParseDeparture:
@@ -175,7 +175,7 @@ class TestStationContext:
         ctx = StationContext(station_id="900023201", station_name="Savignyplatz")
         assert ctx.needs_refresh(30) is True
 
-    @patch("infodisplay.models.time.time", return_value=1000.0)
+    @patch("abfahrt.models.time.time", return_value=1000.0)
     def test_needs_refresh_recent(self, mock_time):
         ctx = StationContext(
             station_id="900023201",
@@ -184,7 +184,7 @@ class TestStationContext:
         )
         assert ctx.needs_refresh(30) is False
 
-    @patch("infodisplay.models.time.time", return_value=1000.0)
+    @patch("abfahrt.models.time.time", return_value=1000.0)
     def test_needs_refresh_stale(self, mock_time):
         ctx = StationContext(
             station_id="900023201",

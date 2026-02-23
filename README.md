@@ -22,7 +22,7 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd infodisplay
+cd abfahrt
 
 # Install for local development (Pygame window)
 pip install -e ".[dev]"
@@ -35,32 +35,32 @@ pip install -e ".[hardware]"
 
 ```bash
 # Run the live departure display (Pygame window, default config.yaml)
-python -m infodisplay
+python -m abfahrt
 
 # Use a specific config file
-python -m infodisplay --config config.hardware.yaml
+python -m abfahrt --config config.hardware.yaml
 
 # Run in fullscreen mode
-python -m infodisplay --fullscreen
+python -m abfahrt --fullscreen
 
 # Override to a single station (no rotation)
-python -m infodisplay --station-id 900100003
+python -m abfahrt --station-id 900100003
 
 # Search for a station ID
-python -m infodisplay --search "Alexanderplatz"
+python -m abfahrt --search "Alexanderplatz"
 
 # Fetch live departures and print to terminal
-python -m infodisplay --fetch-test
+python -m abfahrt --fetch-test
 
 # Render a test image to assets/ (uses config for size/fonts)
-python -m infodisplay --render-test
-python -m infodisplay --config config.hardware.yaml --render-test
+python -m abfahrt --render-test
+python -m abfahrt --config config.hardware.yaml --render-test
 
 # Enable debug logging
-python -m infodisplay --debug
+python -m abfahrt --debug
 
 # Custom refresh and rotation intervals
-python -m infodisplay --refresh 15 --rotation 5
+python -m abfahrt --refresh 15 --rotation 5
 ```
 
 Press **ESC** or close the window to quit (Pygame mode).
@@ -231,10 +231,10 @@ Font sizes scale automatically based on display height. The hardware config uses
 
 ```bash
 # Run on hardware
-python -m infodisplay --config config.hardware.yaml
+python -m abfahrt --config config.hardware.yaml
 
 # Preview what the hardware display will look like
-python -m infodisplay --config config.hardware.yaml --render-test
+python -m abfahrt --config config.hardware.yaml --render-test
 ```
 
 The SSD1322 is a 4-bit grayscale OLED - the amber RGB colors are automatically converted to grayscale. On hardware, there are no GUI events (no ESC key); stop with Ctrl+C or manage via systemd.
@@ -281,13 +281,13 @@ BVG REST API  →  api.py (BVGClient)
 ## Project Structure
 
 ```
-infodisplay/
+abfahrt/
 ├── config.yaml                   # Pygame development config
 ├── config.hardware.yaml          # Pi Zero + SSD1322 hardware config
 ├── pyproject.toml                # Build and dependency config
 ├── README.md
 │
-├── src/infodisplay/              # Source code
+├── src/abfahrt/              # Source code
 │   ├── __init__.py
 │   ├── __main__.py               # Entry point and CLI routing
 │   ├── config.py                 # Configuration loading

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 from PIL import Image
 
-from infodisplay.models import Departure
-from infodisplay.renderer import DepartureRenderer
+from abfahrt.models import Departure
+from abfahrt.renderer import DepartureRenderer
 
 
 def _make_departure(

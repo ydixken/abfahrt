@@ -1,6 +1,6 @@
-"""Tests for infodisplay.config."""
+"""Tests for abfahrt.config."""
 
-from infodisplay.config import Config, load_config, StationConfig
+from abfahrt.config import Config, load_config, StationConfig
 
 
 class TestConfigDefaults:

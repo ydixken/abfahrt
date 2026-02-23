@@ -1,13 +1,13 @@
-"""Tests for infodisplay.api."""
+"""Tests for abfahrt.api."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
-from infodisplay.api import BASE_URL, BVGClient
-from infodisplay.config import load_config
-from infodisplay.models import Departure
+from abfahrt.api import BASE_URL, BVGClient
+from abfahrt.config import load_config
+from abfahrt.models import Departure
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def mock_departures_response(sample_departures_list):
 
 
 class TestGetDepartures:
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_calls_correct_url(self, mock_get, client, mock_departures_response):
         mock_get.return_value = mock_departures_response
         client.get_departures("900023201")
@@ -36,7 +36,7 @@ class TestGetDepartures:
         assert "900023201" in call_args[0][0]
         assert "/departures" in call_args[0][0]
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_passes_filter_params(self, mock_get, client, mock_departures_response):
         mock_get.return_value = mock_departures_response
         client.get_departures("900023201")
@@ -47,20 +47,20 @@ class TestGetDepartures:
         assert params["ferry"] == "false"
         assert params["duration"] == 60
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_returns_departure_list(self, mock_get, client, mock_departures_response):
         mock_get.return_value = mock_departures_response
         result = client.get_departures("900023201")
         assert isinstance(result, list)
         assert len(result) == 4
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_timeout(self, mock_get, client):
         mock_get.side_effect = requests.exceptions.Timeout("Connection timed out")
         with pytest.raises(requests.exceptions.Timeout):
             client.get_departures("900023201")
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_connection_error(self, mock_get, client):
         mock_get.side_effect = requests.exceptions.ConnectionError("No connection")
         with pytest.raises(requests.exceptions.ConnectionError):
@@ -68,7 +68,7 @@ class TestGetDepartures:
 
 
 class TestSearchStations:
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_search_calls_locations(self, mock_get, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = [
@@ -87,7 +87,7 @@ class TestSearchStations:
 
 
 class TestGetStationName:
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_returns_name(self, mock_get, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"id": "900023201", "name": "S Savignyplatz"}
@@ -99,7 +99,7 @@ class TestGetStationName:
 
 
 class TestFetchParsedDepartures:
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_returns_sorted_departures(self, mock_get, client, sample_departures_list):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"departures": sample_departures_list}
@@ -109,7 +109,7 @@ class TestFetchParsedDepartures:
         result = client.fetch_parsed_departures("900023201")
         assert all(isinstance(d, Departure) for d in result)
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_sorted_by_when(self, mock_get, client, sample_departures_list):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"departures": sample_departures_list}
@@ -121,7 +121,7 @@ class TestFetchParsedDepartures:
         times = [d.when or d.planned_when or "" for d in result]
         assert times == sorted(times)
 
-    @patch("infodisplay.api.requests.Session.get")
+    @patch("abfahrt.api.requests.Session.get")
     def test_keeps_cancelled(self, mock_get, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {

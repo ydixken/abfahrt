@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import requests
 
-from infodisplay.config import Config
-from infodisplay.models import Departure, parse_departure
+from abfahrt.config import Config
+from abfahrt.models import Departure, parse_departure
 
 BASE_URL = "https://v6.bvg.transport.rest"
 

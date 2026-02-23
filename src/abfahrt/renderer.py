@@ -8,8 +8,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from infodisplay.models import Departure
-from infodisplay.weather import WeatherData
+from abfahrt.models import Departure
+from abfahrt.weather import WeatherData
 
 # Project root (three levels up from this file)
 _ROOT = Path(__file__).resolve().parent.parent.parent

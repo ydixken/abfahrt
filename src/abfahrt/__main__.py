@@ -1,14 +1,14 @@
-"""Entry point for infodisplay."""
+"""Entry point for abfahrt."""
 
 import logging
 import sys
 
-from infodisplay.config import load_config
+from abfahrt.config import load_config
 
 
 def run_fetch_test(config):
     """Fetch and print live departures for all configured stations."""
-    from infodisplay.api import BVGClient
+    from abfahrt.api import BVGClient
 
     client = BVGClient(config)
     for station_cfg in config.stations:
@@ -33,8 +33,8 @@ def run_fetch_test(config):
 
 def run_render_test(config):
     """Render mock departures for both display modes."""
-    from infodisplay.config import Config, DisplayConfig
-    from infodisplay.renderer import run_render_test as _run_render_test
+    from abfahrt.config import Config, DisplayConfig
+    from abfahrt.renderer import run_render_test as _run_render_test
 
     # Render with the active config
     output_path = _run_render_test(config)
@@ -60,7 +60,7 @@ def run_render_test(config):
 
 def run_search(config):
     """Search for stations by name."""
-    from infodisplay.api import BVGClient
+    from abfahrt.api import BVGClient
 
     client = BVGClient(config)
     results = client.search_stations(config.search)
@@ -75,7 +75,7 @@ def run_search(config):
 
 def run_app(config):
     """Run the full Pygame display application."""
-    from infodisplay.app import InfoDisplayApp
+    from abfahrt.app import InfoDisplayApp
 
     app = InfoDisplayApp(config)
     app.run()
