@@ -39,8 +39,8 @@ class WeatherData:
         """Short precipitation summary for display."""
         total = self.precip_total
         if total == 0:
-            return "0mm"
-        return f"{total:.1f}mm"
+            return ""
+        return f"\u2602{round(total)}"
 
 
 def fetch_weather(lat: float, lon: float) -> WeatherData:

@@ -55,8 +55,8 @@ def parse_departure(raw: dict) -> Departure:
     # Prefix tram lines without "M" with "M" for consistency with MetroTram branding
     if line_product == "tram" and line_name and not line_name.startswith("M"):
         line_name = f"M{line_name}"
-    # Prefix bus lines with "B"
-    if line_product == "bus" and line_name and not line_name.startswith("B"):
+    # Prefix bus lines with "B" (skip night buses which already have "N")
+    if line_product == "bus" and line_name and not line_name.startswith(("B", "N")):
         line_name = f"B{line_name}"
 
     return Departure(

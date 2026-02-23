@@ -79,6 +79,8 @@ class DepartureRenderer:
                 header_path, station_name_size
             )
         self.font_header = ImageFont.truetype(header_path, header_size)
+        info_size = max(6, round((header_size + station_name_size) // 2))
+        self.font_info = ImageFont.truetype(header_path, info_size)
         self.font_departure = ImageFont.truetype(main_path, departure_size)
         self.font_linie = ImageFont.truetype(header_path, departure_size)
         self.font_remark = ImageFont.truetype(remark_path, remark_size)
@@ -177,29 +179,29 @@ class DepartureRenderer:
         cy = self.station_name_height // 2
         margin = max(2, round(4 * self.scale))
 
-        # Weather info (left-aligned, smaller font)
+        # Weather info (left-aligned)
         if weather is not None:
             weather_str = (
-                f"{weather.current_temp:.0f}°"
-                f" {weather.daily_low:.0f}/{weather.daily_high:.0f}°"
+                f"{weather.current_temp:.0f}C"
+                f" {weather.daily_low:.0f}/{weather.daily_high:.0f}C"
                 f" {weather.precip_summary}"
             )
             draw.text(
                 (margin, cy),
                 weather_str,
                 fill=BLACK,
-                font=self.font_header,
+                font=self.font_info,
                 anchor="lm",
             )
 
-        # Current time (right-aligned, smaller font)
+        # Current time (right-aligned)
         now = datetime.now()
         time_str = now.strftime("%H:%M")
         draw.text(
             (self.width - margin, cy),
             time_str,
             fill=BLACK,
-            font=self.font_header,
+            font=self.font_info,
             anchor="rm",
         )
         # Station name (centered)
@@ -575,6 +577,8 @@ def run_render_test(config=None) -> str:
     )
 
     mode = config.display.mode if config is not None else "pygame"
+    if mode == "ssd1322":
+        img = img.convert("L").convert("RGB")
     output_path = str(_ROOT / f"test_output_{mode}.png")
     img.save(output_path)
     return output_path
