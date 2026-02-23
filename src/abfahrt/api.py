@@ -28,7 +28,10 @@ class BVGClient:
         """
         self.config = config
         self.session = requests.Session()
-        self.session.headers.update({"Accept": "application/json"})
+        self.session.headers.update({
+            "Accept": "application/json",
+            "User-Agent": "abfahrt (https://github.com/ydixken/abfahrt)",
+        })
 
     def get_departures(self, station_id: str) -> list[dict]:
         """Fetch raw departure dicts from the API.

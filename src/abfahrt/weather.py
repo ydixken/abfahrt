@@ -63,7 +63,8 @@ def fetch_weather(lat: float, lon: float) -> WeatherData:
         "forecast_days": 1,
         "forecast_hours": 12,
     }
-    resp = requests.get(BASE_URL, params=params, timeout=10)
+    headers = {"User-Agent": "abfahrt (https://github.com/ydixken/abfahrt)"}
+    resp = requests.get(BASE_URL, params=params, headers=headers, timeout=10)
     resp.raise_for_status()
     data = resp.json()
 
