@@ -83,6 +83,23 @@ Press **ESC** or close the window to quit (Pygame mode).
 
 Edit `config.yaml` in the project root. All sections are optional - defaults are used for anything omitted.
 
+### Finding Station IDs
+
+Use `--search` to look up BVG station IDs by name:
+
+```bash
+$ python -m abfahrt --search Hermannplatz
+  1. U Hermannplatz (Berlin)  [ID: 900078101]
+  2. U Hermannplatz/Karl-Marx-Str. (Berlin)  [ID: 900078106]
+  3. U Hermannplatz/Sonnenallee (Berlin)  [ID: 900078105]
+  4. U Hermannplatz/Urbanstr. (Berlin)  [ID: 900078104]
+  5. Berlin, Hotel Am Hermannplatz  [ID: 900980206]
+```
+
+Copy the ID into your `config.yaml` stations list. You can add as many stations as you like - the display will rotate between them automatically. You can also leave the `name` field empty - it will be auto-resolved from the ID, but it's nice to have a custom name for display purposes (e.g. "S Ostkreuz" instead of "Ostkreuz (Berlin)").
+
+### config.yaml
+
 ```yaml
 stations:                           # Stations to rotate between
   - id: "900120013"                 # BVG station ID (use --search to find)
