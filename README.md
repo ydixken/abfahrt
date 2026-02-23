@@ -12,10 +12,6 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 
 ![SSD1322 render](assets/test_output_ssd1322.png)
 
-**No departures** - when filtered lines have no upcoming departures
-
-![Empty state](assets/test_output_empty.png)
-
 ## Requirements
 
 - Python 3.12+
