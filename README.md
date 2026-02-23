@@ -81,7 +81,7 @@ Press **ESC** or close the window to quit (Pygame mode).
 
 ## Configuration
 
-Edit `config.yaml` in the project root. All sections are optional - defaults are used for anything omitted.
+Edit `config.yaml` in the project root. Most of the sections are optional - defaults are used for anything omitted.
 
 ### Finding Station IDs
 
@@ -139,9 +139,9 @@ filters:                            # Transport types to include
   regional: true                    # Regional
 
 fonts:                              # Font configuration (optional)
-  font_header: "Transit_Wide_Bold.ttf"
-  font_main: "Transit_Bold.ttf"
-  font_remark: "Transit_Condensed_Normal.ttf"
+  font_header: "JetBrainsMono-Bold.ttf"
+  font_main: "JetBrainsMono-Medium.ttf"
+  font_remark: "JetBrainsMono-Regular.ttf"
   station_name_size: 20
   header_size: 13
   departure_size: 18
