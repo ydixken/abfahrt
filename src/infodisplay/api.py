@@ -71,9 +71,8 @@ class BVGClient:
         return data.get("name", f"Station {station_id}")
 
     def fetch_parsed_departures(self, station_id: str) -> list[Departure]:
-        """Fetch departures, parse, filter cancelled, and sort by time."""
+        """Fetch departures, parse, and sort by time."""
         raw_list = self.get_departures(station_id)
         departures = [parse_departure(raw) for raw in raw_list]
-        departures = [d for d in departures if not d.is_cancelled]
         departures.sort(key=lambda d: d.when or d.planned_when or "")
         return departures

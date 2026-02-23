@@ -108,8 +108,6 @@ class TestFetchParsedDepartures:
 
         result = client.fetch_parsed_departures("900023201")
         assert all(isinstance(d, Departure) for d in result)
-        # Cancelled departures are filtered out
-        assert all(not d.is_cancelled for d in result)
 
     @patch("infodisplay.api.requests.Session.get")
     def test_sorted_by_when(self, mock_get, client, sample_departures_list):
@@ -124,7 +122,7 @@ class TestFetchParsedDepartures:
         assert times == sorted(times)
 
     @patch("infodisplay.api.requests.Session.get")
-    def test_filters_cancelled(self, mock_get, client):
+    def test_keeps_cancelled(self, mock_get, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "departures": [
@@ -144,4 +142,5 @@ class TestFetchParsedDepartures:
         mock_get.return_value = mock_resp
 
         result = client.fetch_parsed_departures("900023201")
-        assert len(result) == 0
+        assert len(result) == 1
+        assert result[0].is_cancelled is True

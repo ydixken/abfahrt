@@ -163,6 +163,10 @@ Current temperature, daily low/high, and 12-hour precipitation forecast are show
 
 Departures within a "hurry zone" blink their time columns to signal you might still catch the train if you hurry. The hurry zone is `walking_minutes - 3` to `walking_minutes`. For example, with `walking_minutes: 10`, departures arriving in 7–10 minutes will blink. Departures below the hurry threshold are filtered out entirely.
 
+### Cancelled Departures
+
+Cancelled departures are shown with the destination alternating between the original destination and "Fällt aus" every second, so you can see what was scheduled but won't run.
+
 ### Line Prefixes
 
 - Tram lines are prefixed with **M** (MetroTram branding): `21` → `M21`

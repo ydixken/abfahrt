@@ -384,10 +384,12 @@ class DepartureRenderer:
         x_dep_time = x_time - min_area_w - pad - dep_time_w
 
         # Blink state for hurry zone (walking_minutes - 3 to walking_minutes)
+        # Cancelled departures never blink
         minutes = dep.minutes_until
         hurry_threshold = max(0, walking_minutes - 3)
         blink_on = (
-            minutes is not None
+            not dep.is_cancelled
+            and minutes is not None
             and hurry_threshold <= minutes <= walking_minutes
             and time.time() % BLINK_PERIOD < BLINK_PERIOD / 2
         )
@@ -411,12 +413,15 @@ class DepartureRenderer:
         else:
             max_w_ziel = x_dep_time - x_ziel - pad
 
-        # Ziel (destination)
-        ziel_text = self._truncate_text(
-            dep.direction or "",
-            self.font_departure,
-            max_w_ziel,
-        )
+        # Ziel (destination) — cancelled departures alternate with "Fällt aus"
+        if dep.is_cancelled and time.time() % BLINK_PERIOD >= BLINK_PERIOD / 2:
+            ziel_text = "Fällt aus"
+        else:
+            ziel_text = self._truncate_text(
+                dep.direction or "",
+                self.font_departure,
+                max_w_ziel,
+            )
         if ziel_text:
             draw.text(
                 (x_ziel, y), ziel_text, fill=AMBER, font=self.font_departure
@@ -598,7 +603,7 @@ def run_render_test(config=None) -> str:
             delay_seconds=0,
             platform="3",
             remarks=[],
-            is_cancelled=False,
+            is_cancelled=True,
         ),
     ]
 
