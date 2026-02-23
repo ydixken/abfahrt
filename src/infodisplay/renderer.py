@@ -644,11 +644,25 @@ def run_render_test(config=None) -> str:
     else:
         renderer = DepartureRenderer()
     station_name = "S Savignyplatz (Berlin)"
+    walking_minutes = 5
     if config is not None and config.stations:
         station_name = (
             config.stations[0].name or f"Station {config.stations[0].id}"
         )
-    img, _ = renderer.render(departures, station_name, weather=mock_weather)
+        walking_minutes = config.stations[0].walking_minutes
+
+    # Force blink ON so the static image always shows hurry-zone highlighting
+    blink_on_time = 0.0  # 0.0 % BLINK_PERIOD < BLINK_PERIOD / 2 → blink ON
+    import time as _time_mod
+    _original_time = _time_mod.time
+    _time_mod.time = lambda: blink_on_time
+    try:
+        renderer._scroll_start = blink_on_time
+        img, _ = renderer.render(
+            departures, station_name, walking_minutes, mock_weather,
+        )
+    finally:
+        _time_mod.time = _original_time
 
     mode = config.display.mode if config is not None else "pygame"
     if mode == "ssd1322":
