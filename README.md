@@ -1,8 +1,8 @@
 # Abfahrt! BVG Abfahrtsanzeige (Departure Display)
 
-A Python application that displays real-time Berlin BVG train departures. It fetches data from the BVG Transport REST API and renders an amber-on-black departure board.
+A Python application that displays real-time Berlin BVG station departures. It fetches data from the BVG Transport REST API and renders an amber-on-black departure board.
 
-Supports two display modes: a **Pygame window** for local development and a **SSD1322 OLED** (256x64, 4-bit grayscale) for hardware deployment on a Raspberry Pi Zero.
+Supports two display modes: a **Pygame window** for local development and a **SSD1322 OLED** (256x64, 4-bit grayscale) for hardware deployment on a Raspberry Pi Zero. Blog post on the build process of the hardware coming soon.
 
 Multi-station rotation, live weather, per-station line filtering, hurry-zone blinking, and more.
 
