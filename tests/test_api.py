@@ -44,7 +44,6 @@ class TestGetDepartures:
         params = mock_get.call_args[1]["params"]
         assert params["suburban"] == "true"
         assert params["bus"] == "false"
-        assert params["ferry"] == "false"
         assert params["duration"] == 60
 
     @patch("abfahrt.api.requests.Session.get")

@@ -135,7 +135,6 @@ filters:                            # Transport types to include
   subway: true                      # U-Bahn
   tram: true                        # Tram / MetroTram
   bus: true                         # Bus
-  ferry: false                      # Ferry
   express: true                     # Express (RE, RB)
   regional: true                    # Regional
 
@@ -203,7 +202,7 @@ Set `show_remarks: false` in the display config to hide the remarks column and g
 
 ### Transport Type Filters
 
-Toggle which transport types to include globally via the `filters` section: S-Bahn, U-Bahn, tram, bus, ferry, express, and regional.
+Toggle which transport types to include globally via the `filters` section: S-Bahn, U-Bahn, tram, bus, express, and regional.
 
 ### Dynamic Font Scaling
 

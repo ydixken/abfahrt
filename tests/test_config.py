@@ -29,7 +29,6 @@ class TestConfigDefaults:
         assert config.filters.subway is True
         assert config.filters.tram is True
         assert config.filters.bus is False
-        assert config.filters.ferry is False
         assert config.filters.express is True
         assert config.filters.regional is True
 
@@ -77,7 +76,6 @@ class TestYAMLOverlay:
         config = load_config(yaml_path=sample_config_yaml, cli_args=[])
         assert config.filters.suburban is False
         assert config.filters.bus is True
-        assert config.filters.ferry is True
         assert config.filters.express is False
 
     def test_yaml_overrides_rotation(self, sample_config_yaml):

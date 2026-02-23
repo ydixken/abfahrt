@@ -31,7 +31,7 @@ class BVGClient:
             "subway": str(filters.subway).lower(),
             "tram": str(filters.tram).lower(),
             "bus": str(filters.bus).lower(),
-            "ferry": str(filters.ferry).lower(),
+            "ferry": "false",
             "express": str(filters.express).lower(),
             "regional": str(filters.regional).lower(),
         }

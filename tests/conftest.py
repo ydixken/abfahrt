@@ -133,7 +133,6 @@ filters:
   subway: true
   tram: false
   bus: true
-  ferry: true
   express: false
   regional: false
 """

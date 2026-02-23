@@ -36,6 +36,5 @@ filters:
   subway: true
   tram: true
   bus: true
-  ferry: false
   express: true
   regional: true

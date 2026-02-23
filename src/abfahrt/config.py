@@ -43,7 +43,6 @@ class FilterConfig:
     subway: bool = True
     tram: bool = True
     bus: bool = False
-    ferry: bool = False
     express: bool = True
     regional: bool = True
 
@@ -128,7 +127,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "filters" in data:
         flt = data["filters"]
-        for key in ("suburban", "subway", "tram", "bus", "ferry", "express", "regional"):
+        for key in ("suburban", "subway", "tram", "bus", "express", "regional"):
             if key in flt:
                 setattr(config.filters, key, flt[key])
 
