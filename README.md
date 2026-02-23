@@ -6,6 +6,14 @@ Supports two display modes: a **Pygame window** for local development and a **SS
 
 Multi-station rotation, live weather, per-station line filtering, hurry-zone blinking, and more.
 
+**Pygame (1024x256)** — desktop development
+
+![Pygame render](test_output_pygame.png)
+
+**SSD1322 OLED (256x64)** — Pi Zero hardware
+
+![SSD1322 render](test_output_ssd1322.png)
+
 ## Requirements
 
 - Python 3.12+
