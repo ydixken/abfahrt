@@ -161,7 +161,7 @@ Configure multiple stations and the display rotates between them automatically. 
 
 ### Per-Station Line Filtering
 
-Add an optional `lines` list to any station to show only specific lines. For example, at Ostkreuz you might only care about the Ringbahn:
+Add an optional `lines` list to any station to show only specific lines. For example, e.g. at Ostkreuz you might only care about the Ringbahn:
 
 ```yaml
 - id: "900120003"
