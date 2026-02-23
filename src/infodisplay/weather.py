@@ -40,7 +40,7 @@ class WeatherData:
         total = self.precip_total
         if total == 0:
             return ""
-        return f"\u2602{round(total)}"
+        return f"{round(total)}mm"
 
 
 def fetch_weather(lat: float, lon: float) -> WeatherData:

@@ -171,7 +171,10 @@ class InfoDisplayApp:
 
                 scrolling_done = True
                 if visible:
-                    img, scrolling_done = self.renderer.render(visible, ctx.station_name, walk, self.weather)
+                    img, scrolling_done = self.renderer.render(
+                        visible, ctx.station_name, walk, self.weather,
+                        weather_page=self.active_station_index,
+                    )
                 elif ctx.last_fetch > 0:
                     img = render_error(
                         "Keine Abfahrten",

@@ -125,6 +125,7 @@ class DepartureRenderer:
         station_name: str,
         walking_minutes: int = 5,
         weather: WeatherData | None = None,
+        weather_page: int = 0,
     ) -> tuple[Image.Image, bool]:
         """Render a departure board image.
 
@@ -141,7 +142,7 @@ class DepartureRenderer:
         draw = ImageDraw.Draw(img)
 
         # Draw station name at the top
-        self._draw_station_name(draw, station_name, weather)
+        self._draw_station_name(draw, station_name, weather, weather_page)
 
         # Vertical separator between Linie and Ziel columns
         sep_x = int(self.width * 0.14)
@@ -170,6 +171,7 @@ class DepartureRenderer:
         draw: ImageDraw.ImageDraw,
         station_name: str,
         weather: WeatherData | None = None,
+        weather_page: int = 0,
     ) -> None:
         """Draw the station name centered on a full-width amber block, with clock on the right and weather on the left."""
         draw.rectangle(
@@ -179,31 +181,35 @@ class DepartureRenderer:
         cy = self.station_name_height // 2
         margin = max(2, round(4 * self.scale))
 
-        # Weather info (left-aligned)
-        if weather is not None:
-            weather_str = (
-                f"{weather.current_temp:.0f}C"
-                f" {weather.daily_low:.0f}/{weather.daily_high:.0f}C"
-                f" {weather.precip_summary}"
-            )
-            draw.text(
-                (margin, cy),
-                weather_str,
-                fill=BLACK,
-                font=self.font_info,
-                anchor="lm",
-            )
-
-        # Current time (right-aligned)
+        # Current time (left-aligned)
         now = datetime.now()
         time_str = now.strftime("%H:%M")
         draw.text(
-            (self.width - margin, cy),
+            (margin, cy),
             time_str,
             fill=BLACK,
             font=self.font_info,
-            anchor="rm",
+            anchor="lm",
         )
+
+        # Weather info (right-aligned), alternates between temp and precip per station rotation
+        if weather is not None:
+            temp_str = (
+                f"{weather.current_temp:.0f}C"
+                f" {weather.daily_low:.0f}/{weather.daily_high:.0f}C"
+            )
+            precip_str = weather.precip_summary
+            if precip_str and weather_page % 2 == 1:
+                weather_str = precip_str
+            else:
+                weather_str = temp_str
+            draw.text(
+                (self.width - margin, cy),
+                weather_str,
+                fill=BLACK,
+                font=self.font_info,
+                anchor="rm",
+            )
         # Station name (centered)
         truncate_margin = max(10, round(20 * self.scale))
         text = self._truncate_text(
@@ -572,8 +578,11 @@ def run_render_test(config=None) -> str:
         )
     else:
         renderer = DepartureRenderer()
+    station_name = "S Savignyplatz (Berlin)"
+    if config is not None and config.stations:
+        station_name = config.stations[0].name or f"Station {config.stations[0].id}"
     img, _ = renderer.render(
-        departures, "S Savignyplatz (Berlin)", weather=mock_weather
+        departures, station_name, weather=mock_weather
     )
 
     mode = config.display.mode if config is not None else "pygame"
