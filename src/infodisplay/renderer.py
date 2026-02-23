@@ -331,7 +331,7 @@ class DepartureRenderer:
             draw.text((x, y), text, fill=AMBER, font=font)
             return True
 
-        # Text overflows — scroll right once, then hold at end
+        # Text overflows - scroll right once, then hold at end
         scroll_distance = text_w - max_width
         scroll_duration = scroll_distance / SCROLL_SPEED
         cycle = SCROLL_PAUSE + scroll_duration + SCROLL_PAUSE

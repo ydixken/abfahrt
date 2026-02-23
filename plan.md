@@ -255,7 +255,7 @@ The team leader must create tasks using `TaskCreate` at startup. Below is the fu
 ### Milestone 1: Project Scaffolding & Data Layer
 
 ```
-Task M1.1 — "Initialize project structure"
+Task M1.1 - "Initialize project structure"
   Owner: devops-agent
   Dependencies: none
   Description: Create directory tree (src/infodisplay/, tests/, fonts/, assets/),
@@ -267,7 +267,7 @@ Task M1.1 — "Initialize project structure"
     tests/__init__.py,
     git init, create venv, pip install deps.
 
-Task M1.2 — "Download Dot Matrix fonts"
+Task M1.2 - "Download Dot Matrix fonts"
   Owner: devops-agent
   Dependencies: M1.1
   Description: Download TTFs from github.com/DanielHartUK/Dot-Matrix-Typeface into fonts/.
@@ -275,7 +275,7 @@ Task M1.2 — "Download Dot Matrix fonts"
     Rename to DotMatrix-Regular.ttf, DotMatrix-Bold.ttf, DotMatrix-BoldTall.ttf.
     Add fonts/LICENSE with SIL Open Font License notice.
 
-Task M1.3 — "Implement config.py"
+Task M1.3 - "Implement config.py"
   Owner: data-agent
   Dependencies: M1.1
   Description: Nested dataclasses: StationConfig(id, name), DisplayConfig(width, height,
@@ -287,7 +287,7 @@ Task M1.3 — "Implement config.py"
     CLI args: --station-id (single station override), --fullscreen, --refresh, --rotation,
     --search, --fetch-test, --render-test, --debug.
 
-Task M1.4 — "Implement models.py"
+Task M1.4 - "Implement models.py"
   Owner: data-agent
   Dependencies: M1.1
   Description: Departure dataclass (line_name, line_product, direction, when, planned_when,
@@ -296,7 +296,7 @@ Task M1.4 — "Implement models.py"
     StationContext dataclass (station_id, station_name, departures: list[Departure], last_fetch: float).
     Handle FK remark code → "Fahrradmitnahme möglich".
 
-Task M1.5 — "Write config and model tests"
+Task M1.5 - "Write config and model tests"
   Owner: data-agent
   Dependencies: M1.3, M1.4
   Description: tests/conftest.py with sample BVG API JSON fixtures.
@@ -304,7 +304,7 @@ Task M1.5 — "Write config and model tests"
     tests/test_models.py: test parse_departure with normal data, null when, null delay,
     empty remarks, minutes_until calculation, StationContext.
 
-Task M1.6 — "Verify M1 deliverables"
+Task M1.6 - "Verify M1 deliverables"
   Owner: leader
   Dependencies: M1.1, M1.2, M1.3, M1.4, M1.5
   Description: Run pytest tests/ -v, verify python -m infodisplay --help works.
@@ -314,7 +314,7 @@ Task M1.6 — "Verify M1 deliverables"
 ### Milestone 2: BVG API Client
 
 ```
-Task M2.1 — "Implement api.py"
+Task M2.1 - "Implement api.py"
   Owner: data-agent
   Dependencies: M1.3, M1.4
   Description: BVGClient class using requests.Session.
@@ -323,7 +323,7 @@ Task M2.1 — "Implement api.py"
     get_station_name(station_id) → str: GET /stops/{id}, return name.
     fetch_parsed_departures(station_id) → list[Departure]: calls get_departures, maps parse_departure, filters cancelled, sorts by when.
 
-Task M2.2 — "Write API tests"
+Task M2.2 - "Write API tests"
   Owner: data-agent
   Dependencies: M2.1
   Description: tests/test_api.py using unittest.mock.patch on requests.Session.get.
@@ -331,14 +331,14 @@ Task M2.2 — "Write API tests"
     Test timeout/connection error raises RequestException.
     Test fetch_parsed_departures returns sorted Departure list.
 
-Task M2.3 — "Add --fetch-test CLI mode"
+Task M2.3 - "Add --fetch-test CLI mode"
   Owner: data-agent
   Dependencies: M2.1
   Description: In __main__.py, when --fetch-test flag is set, call fetch_parsed_departures
     for all configured stations and print a formatted table to stdout:
     "S7  | S Potsdam Hbf | Fahrradmitnahme möglich | 3 min | +0"
 
-Task M2.4 — "Verify M2 deliverables"
+Task M2.4 - "Verify M2 deliverables"
   Owner: leader
   Dependencies: M2.1, M2.2, M2.3
   Description: Run pytest tests/test_api.py -v.
@@ -349,7 +349,7 @@ Task M2.4 — "Verify M2 deliverables"
 ### Milestone 3: Rendering Engine
 
 ```
-Task M3.1 — "Implement renderer.py"
+Task M3.1 - "Implement renderer.py"
   Owner: render-agent
   Dependencies: M1.1, M1.2, M1.4
   Description: DepartureRenderer class. Constructor loads fonts from fonts/.
@@ -360,27 +360,27 @@ Task M3.1 — "Implement renderer.py"
     Each departure row: line name, destination, remarks, station name, "X min".
     Delays shown as "(+X)" appended to time.
 
-Task M3.2 — "Create S-Bahn icon asset"
+Task M3.2 - "Create S-Bahn icon asset"
   Owner: render-agent
   Dependencies: M1.1
-  Description: Create assets/sbahn_icon.png — 16x16 amber roundel with "S" on transparent bg.
+  Description: Create assets/sbahn_icon.png - 16x16 amber roundel with "S" on transparent bg.
     Can be generated programmatically with PIL if needed.
     Load in renderer, resize to font height, composite after station name.
 
-Task M3.3 — "Add --render-test CLI mode"
+Task M3.3 - "Add --render-test CLI mode"
   Owner: render-agent
   Dependencies: M3.1, M3.2
   Description: When --render-test flag, create mock Departure objects (no API),
     render via DepartureRenderer, save to test_output.png, print path.
     Compare visually against Screenshot 2026-02-22 at 20.49.56.png.
 
-Task M3.4 — "Write renderer tests"
+Task M3.4 - "Write renderer tests"
   Owner: render-agent
   Dependencies: M3.1
   Description: tests/test_renderer.py: correct image dimensions, non-all-black output,
     0 departures shows header, overflow (more departures than fit) doesn't crash.
 
-Task M3.5 — "Verify M3 deliverables"
+Task M3.5 - "Verify M3 deliverables"
   Owner: leader
   Dependencies: M3.1, M3.2, M3.3, M3.4
   Description: Run pytest tests/test_renderer.py -v.
@@ -391,7 +391,7 @@ Task M3.5 — "Verify M3 deliverables"
 ### Milestone 4: Pygame Display & Main Loop
 
 ```
-Task M4.1 — "Implement display.py"
+Task M4.1 - "Implement display.py"
   Owner: display-agent
   Dependencies: M1.1
   Description: DepartureDisplay class with Pygame.
@@ -400,7 +400,7 @@ Task M4.1 — "Implement display.py"
     handle_events() → bool: return False on QUIT or ESC.
     close(): pygame.quit(). Support --fullscreen via pygame.FULLSCREEN flag.
 
-Task M4.2 — "Implement app.py with multi-station rotation"
+Task M4.2 - "Implement app.py with multi-station rotation"
   Owner: display-agent
   Dependencies: M2.1, M3.1, M4.1
   Description: InfoDisplayApp orchestrator.
@@ -411,24 +411,24 @@ Task M4.2 — "Implement app.py with multi-station rotation"
     independently), render active station's board, update display.
     Single station: rotation disabled. Error handling: show error overlay if first fetch fails.
 
-Task M4.3 — "Wire up __main__.py"
+Task M4.3 - "Wire up __main__.py"
   Owner: display-agent
   Dependencies: M4.2, M2.3, M3.3
   Description: Full CLI routing: --fetch-test → print table, --render-test → save PNG,
     --search → station lookup, default → InfoDisplayApp().run().
     Wrap in try/except for KeyboardInterrupt and unexpected errors.
 
-Task M4.4 — "Add error overlay rendering"
+Task M4.4 - "Add error overlay rendering"
   Owner: display-agent
   Dependencies: M3.1
   Description: In renderer.py (or display-agent coordinates with render-agent), add
     render_error(message) → PIL Image that shows centered error text on black bg.
     Messages: "Station nicht gefunden", "Keine Abfahrten", "Netzwerkfehler".
 
-Task M4.5 — "Verify M4 deliverables"
+Task M4.5 - "Verify M4 deliverables"
   Owner: leader
   Dependencies: M4.1, M4.2, M4.3, M4.4
-  Description: Run python -m infodisplay — verify window opens, data loads, rotates stations.
+  Description: Run python -m infodisplay - verify window opens, data loads, rotates stations.
     Test ESC to quit, --fullscreen, --station-id override, network disconnect (show stale data).
     Git commit "M4: Pygame display and main loop".
 ```
@@ -436,32 +436,32 @@ Task M4.5 — "Verify M4 deliverables"
 ### Milestone 5: Polish & Documentation
 
 ```
-Task M5.1 — "Add logging"
+Task M5.1 - "Add logging"
   Owner: display-agent
   Dependencies: M4.5
   Description: Python logging module throughout. INFO default, --debug for DEBUG.
     Log: API fetch times, parse errors, refresh cycles, rotation switches, Pygame events.
 
-Task M5.2 — "Handle edge cases in rendering"
+Task M5.2 - "Handle edge cases in rendering"
   Owner: render-agent
   Dependencies: M4.5
-  Description: Long destination names — truncate with ellipsis using font.getbbox().
+  Description: Long destination names - truncate with ellipsis using font.getbbox().
     Long line names. Missing data fields. Text overflow into adjacent columns.
 
-Task M5.3 — "Add --search CLI mode"
+Task M5.3 - "Add --search CLI mode"
   Owner: data-agent
   Dependencies: M4.5
   Description: --search "Station Name" calls search_stations(), prints numbered list:
     "1. S+U Alexanderplatz Bhf (Berlin)  [ID: 900100003]"
     User copies ID into config.yaml.
 
-Task M5.4 — "Write README.md"
+Task M5.4 - "Write README.md"
   Owner: display-agent
   Dependencies: M4.5
   Description: Installation (venv, pip, font note), configuration guide (all config.yaml
     options with multi-station example), usage examples, architecture overview, API attribution.
 
-Task M5.5 — "Final test pass and review"
+Task M5.5 - "Final test pass and review"
   Owner: leader
   Dependencies: M5.1, M5.2, M5.3, M5.4
   Description: Run pytest tests/ -v, verify all pass. Read all source files.
@@ -515,14 +515,14 @@ Once M1.1 is done (project structure exists), spawn both agents in the same mess
 > You are the data-agent for the infodisplay project. Read the plan at /Users/ydixken/development/infodisplay/plan.md. Your tasks are M1.3 (config.py), M1.4 (models.py), M1.5 (tests). Then M2.1-M2.3 (API client + tests + fetch-test CLI). Then M5.3 (station search CLI). Project root: /Users/ydixken/development/infodisplay. You own: src/infodisplay/config.py, src/infodisplay/models.py, src/infodisplay/api.py, tests/conftest.py, tests/test_config.py, tests/test_models.py, tests/test_api.py. Do NOT modify renderer.py, display.py, or app.py. Use the venv at .venv/ to run tests. After completing each task, mark it done via TaskUpdate and check TaskList for more work.
 
 **render-agent context:**
-> You are the render-agent for the infodisplay project. Read the plan at /Users/ydixken/development/infodisplay/plan.md. Your tasks are M3.1 (renderer.py), M3.2 (S-Bahn icon), M3.3 (render-test CLI), M3.4 (renderer tests). Then M5.2 (edge cases). Project root: /Users/ydixken/development/infodisplay. You own: src/infodisplay/renderer.py, assets/, tests/test_renderer.py. You need models.py for the Departure dataclass — read it from data-agent's work but don't modify it. Reference screenshot: /Users/ydixken/development/infodisplay/Screenshot 2026-02-22 at 20.49.56.png. After completing each task, mark it done via TaskUpdate and check TaskList for more work.
+> You are the render-agent for the infodisplay project. Read the plan at /Users/ydixken/development/infodisplay/plan.md. Your tasks are M3.1 (renderer.py), M3.2 (S-Bahn icon), M3.3 (render-test CLI), M3.4 (renderer tests). Then M5.2 (edge cases). Project root: /Users/ydixken/development/infodisplay. You own: src/infodisplay/renderer.py, assets/, tests/test_renderer.py. You need models.py for the Departure dataclass - read it from data-agent's work but don't modify it. Reference screenshot: /Users/ydixken/development/infodisplay/Screenshot 2026-02-22 at 20.49.56.png. After completing each task, mark it done via TaskUpdate and check TaskList for more work.
 
 ### Step 6: Spawn display-agent When M2+M3 Are Done
 
 Once both data-agent and render-agent finish their milestone tasks:
 
 **display-agent context:**
-> You are the display-agent for the infodisplay project. Read the plan at /Users/ydixken/development/infodisplay/plan.md. Your tasks are M4.1 (display.py), M4.2 (app.py with multi-station rotation), M4.3 (__main__.py integration), M4.4 (error overlays). Then M5.1 (logging) and M5.4 (README.md). Project root: /Users/ydixken/development/infodisplay. You own: src/infodisplay/display.py, src/infodisplay/app.py, src/infodisplay/__main__.py, README.md. You will import from config.py, models.py, api.py, renderer.py — read them but don't modify. After completing each task, mark it done via TaskUpdate and check TaskList for more work.
+> You are the display-agent for the infodisplay project. Read the plan at /Users/ydixken/development/infodisplay/plan.md. Your tasks are M4.1 (display.py), M4.2 (app.py with multi-station rotation), M4.3 (__main__.py integration), M4.4 (error overlays). Then M5.1 (logging) and M5.4 (README.md). Project root: /Users/ydixken/development/infodisplay. You own: src/infodisplay/display.py, src/infodisplay/app.py, src/infodisplay/__main__.py, README.md. You will import from config.py, models.py, api.py, renderer.py - read them but don't modify. After completing each task, mark it done via TaskUpdate and check TaskList for more work.
 
 ### Step 7: Verify Each Milestone
 
@@ -531,7 +531,7 @@ After each milestone's tasks are all marked complete:
 1. **M1:** Run `cd /Users/ydixken/development/infodisplay && .venv/bin/python -m pytest tests/ -v && .venv/bin/python -m infodisplay --help`
 2. **M2:** Run `.venv/bin/python -m pytest tests/test_api.py -v && .venv/bin/python -m infodisplay --fetch-test`
 3. **M3:** Run `.venv/bin/python -m pytest tests/test_renderer.py -v && .venv/bin/python -m infodisplay --render-test`
-4. **M4:** Run `.venv/bin/python -m infodisplay` — verify window, rotation, ESC quit
+4. **M4:** Run `.venv/bin/python -m infodisplay` - verify window, rotation, ESC quit
 5. **M5:** Run full test suite, verify all features, create final commit
 
 If verification fails, message the responsible agent with the error output and ask them to fix it.

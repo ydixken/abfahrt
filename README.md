@@ -8,11 +8,11 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 
 ![Station rotation demo](assets/demo.gif)
 
-**SSD1322 OLED (256x64)** — Pi Zero hardware
+**SSD1322 OLED (256x64)** - Pi Zero hardware
 
 ![SSD1322 render](assets/test_output_ssd1322.png)
 
-**No departures** — when filtered lines have no upcoming departures
+**No departures** - when filtered lines have no upcoming departures
 
 ![Empty state](assets/test_output_empty.png)
 
@@ -85,7 +85,7 @@ Press **ESC** or close the window to quit (Pygame mode).
 
 ## Configuration
 
-Edit `config.yaml` in the project root. All sections are optional — defaults are used for anything omitted.
+Edit `config.yaml` in the project root. All sections are optional - defaults are used for anything omitted.
 
 ```yaml
 stations:                           # Stations to rotate between
@@ -145,7 +145,7 @@ weather:                            # Weather display (optional)
 
 ### Multi-Station Rotation
 
-Configure multiple stations and the display rotates between them automatically. Rotation is scroll-gated — it waits for any scrolling remarks to finish before switching. Override to a single station with `--station-id`.
+Configure multiple stations and the display rotates between them automatically. Rotation is scroll-gated - it waits for any scrolling remarks to finish before switching. Override to a single station with `--station-id`.
 
 ### Per-Station Line Filtering
 
@@ -237,7 +237,7 @@ python -m infodisplay --config config.hardware.yaml
 python -m infodisplay --config config.hardware.yaml --render-test
 ```
 
-The SSD1322 is a 4-bit grayscale OLED — the amber RGB colors are automatically converted to grayscale. On hardware, there are no GUI events (no ESC key); stop with Ctrl+C or manage via systemd.
+The SSD1322 is a 4-bit grayscale OLED - the amber RGB colors are automatically converted to grayscale. On hardware, there are no GUI events (no ESC key); stop with Ctrl+C or manage via systemd.
 
 ### Display Modes
 
@@ -320,9 +320,9 @@ python -m pytest tests/ -v
 
 ## API Attribution
 
-- [BVG Transport REST API v6](https://v6.bvg.transport.rest) — free, no authentication required, rate limit 100 requests/minute
-- [Open-Meteo API](https://open-meteo.com/) — free weather API, no API key required
+- [BVG Transport REST API v6](https://v6.bvg.transport.rest) - free, no authentication required, rate limit 100 requests/minute
+- [Open-Meteo API](https://open-meteo.com/) - free weather API, no API key required
 
 ## Fonts
 
-Uses the **FF Transit** typeface family — the official typeface of BVG (Berliner Verkehrsbetriebe). Three variants are included in the `fonts/` directory: Transit Wide Bold, Transit Bold, and Transit Condensed Normal.
+Uses the **FF Transit** typeface family - the official typeface of BVG (Berliner Verkehrsbetriebe). Three variants are included in the `fonts/` directory: Transit Wide Bold, Transit Bold, and Transit Condensed Normal.

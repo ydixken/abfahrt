@@ -29,7 +29,7 @@ class SSD1322Display:
         self.device.display(grey)
 
     def handle_events(self) -> bool:
-        """No GUI events on hardware — always returns True."""
+        """No GUI events on hardware - always returns True."""
         return True
 
     def close(self) -> None:
