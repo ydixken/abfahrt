@@ -1,4 +1,4 @@
-# BVG Abfahrtsanzeige (Departure Display)
+# Abfahrt! BVG Abfahrtsanzeige (Departure Display)
 
 A Python application that displays real-time Berlin BVG train departures. It fetches data from the BVG Transport REST API and renders an amber-on-black departure board.
 
