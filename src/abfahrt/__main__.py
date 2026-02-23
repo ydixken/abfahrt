@@ -7,7 +7,15 @@ from abfahrt.config import load_config
 
 
 def run_fetch_test(config):
-    """Fetch and print live departures for all configured stations."""
+    """Fetch and print live departures for all configured stations.
+
+    For each station, resolves the display name (from config or API),
+    fetches current departures, and prints a formatted table to stdout
+    with columns: line, direction, remarks, minutes until, and delay.
+
+    Args:
+        config: Application configuration with station list and API filters.
+    """
     from abfahrt.api import BVGClient
 
     client = BVGClient(config)
@@ -32,7 +40,16 @@ def run_fetch_test(config):
 
 
 def run_render_test(config):
-    """Render mock departures for both display modes."""
+    """Render mock departures and save test images for both display modes.
+
+    Renders the active display mode first, then automatically renders
+    the other mode for visual comparison. This lets developers preview
+    both desktop (1024x256 Pygame) and hardware (256x64 SSD1322) output
+    with a single command.
+
+    Args:
+        config: Application configuration with display mode and dimensions.
+    """
     from abfahrt.config import Config, DisplayConfig
     from abfahrt.renderer import run_render_test as _run_render_test
 
@@ -60,7 +77,15 @@ def run_render_test(config):
 
 
 def run_search(config):
-    """Search for stations by name."""
+    """Search for BVG stations by name and print matching IDs.
+
+    Calls the BVG locations API with the search query from --search,
+    then prints numbered results with station names and 9-digit IDs
+    that can be used in config.yaml.
+
+    Args:
+        config: Application configuration; config.search contains the query string.
+    """
     from abfahrt.api import BVGClient
 
     client = BVGClient(config)
@@ -75,7 +100,15 @@ def run_search(config):
 
 
 def run_app(config):
-    """Run the full Pygame display application."""
+    """Run the full departure display application.
+
+    Creates an InfoDisplayApp instance and enters the main loop.
+    The app fetches live departures, renders the board, and rotates
+    between configured stations until the user quits (ESC or window close).
+
+    Args:
+        config: Fully assembled application configuration.
+    """
     from abfahrt.app import InfoDisplayApp
 
     app = InfoDisplayApp(config)
