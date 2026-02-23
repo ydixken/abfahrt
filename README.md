@@ -88,7 +88,7 @@ Edit `config.yaml` in the project root. All sections are optional - defaults are
 Use `--search` to look up BVG station IDs by name:
 
 ```bash
-$ python -m abfahrt --search Hermannplatz
+python -m abfahrt --search Hermannplatz
   1. U Hermannplatz (Berlin)  [ID: 900078101]
   2. U Hermannplatz/Karl-Marx-Str. (Berlin)  [ID: 900078106]
   3. U Hermannplatz/Sonnenallee (Berlin)  [ID: 900078105]
