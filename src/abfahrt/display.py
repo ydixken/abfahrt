@@ -61,7 +61,7 @@ def render_error(message: str, width: int = 1520, height: int = 180) -> Image.Im
     img = Image.new("RGB", (width, height), BLACK)
     draw = ImageDraw.Draw(img)
 
-    font_path = str(_FONTS_DIR / "DotMatrix-Bold.ttf")
+    font_path = str(_FONTS_DIR / "JetBrainsMono-Bold.ttf")
     try:
         font = ImageFont.truetype(font_path, 20)
     except OSError:

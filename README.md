@@ -315,10 +315,11 @@ abfahrt/
 │   ├── app.py                    # Main orchestrator
 │   └── weather.py                # Weather client
 │
-├── fonts/                        # FF Transit typefaces
-│   ├── Transit_Bold.ttf
-│   ├── Transit_Condensed_Normal.ttf
-│   └── Transit_Wide_Bold.ttf
+├── fonts/                        # JetBrains Mono typefaces
+│   ├── JetBrainsMono-Bold.ttf
+│   ├── JetBrainsMono-ExtraBold.ttf
+│   ├── JetBrainsMono-Medium.ttf
+│   └── JetBrainsMono-Regular.ttf
 │
 └── tests/                        # Test suite
     ├── conftest.py               # Shared fixtures
@@ -338,7 +339,3 @@ python -m pytest tests/ -v
 
 - [BVG Transport REST API v6](https://v6.bvg.transport.rest) - free, no authentication required, rate limit 100 requests/minute
 - [Open-Meteo API](https://open-meteo.com/) - free weather API, no API key required
-
-## Fonts
-
-Uses the **FF Transit** typeface family - the official typeface of BVG (Berliner Verkehrsbetriebe). Three variants are included in the `fonts/` directory: Transit Wide Bold, Transit Bold, and Transit Condensed Normal.
