@@ -20,6 +20,7 @@ class StationConfig:
 
 @dataclass
 class DisplayConfig:
+    mode: str = "pygame"  # "pygame" or "ssd1322"
     width: int = 1520
     height: int = 180
     fullscreen: bool = False
@@ -114,7 +115,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "display" in data:
         d = data["display"]
-        for key in ("width", "height", "fullscreen", "fps", "show_remarks", "background_color", "text_color"):
+        for key in ("mode", "width", "height", "fullscreen", "fps", "show_remarks", "background_color", "text_color"):
             if key in d:
                 setattr(config.display, key, d[key])
 
@@ -148,6 +149,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="infodisplay",
         description="BVG Train Departure Display",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Path to YAML config file",
     )
     parser.add_argument(
         "--station-id",
@@ -230,15 +236,18 @@ def load_config(
     """
     config = Config()
 
-    if yaml_path is None:
-        yaml_path = os.path.join(
-            Path(__file__).resolve().parent.parent.parent, "config.yaml"
-        )
-
-    _apply_yaml(config, yaml_path)
-
     parser = _build_parser()
     args = parser.parse_args(cli_args if cli_args is not None else None)
+
+    if yaml_path is None:
+        if args.config:
+            yaml_path = args.config
+        else:
+            yaml_path = os.path.join(
+                Path(__file__).resolve().parent.parent.parent, "config.yaml"
+            )
+
+    _apply_yaml(config, yaml_path)
     _apply_args(config, args)
 
     return config

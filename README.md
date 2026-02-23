@@ -1,6 +1,8 @@
 # BVG Abfahrtsanzeige (Departure Display)
 
-A desktop Python application that simulates a Berlin BVG train departure board. It fetches real-time departure data from the BVG Transport REST API and renders an amber-on-black display using the FF Transit typeface (the official BVG font) in a Pygame window.
+A Python application that displays real-time Berlin BVG train departures. It fetches data from the BVG Transport REST API and renders an amber-on-black departure board.
+
+Supports two display modes: a **Pygame window** for local development and a **SSD1322 OLED** (256x64, 4-bit grayscale) for hardware deployment on a Raspberry Pi Zero.
 
 Multi-station rotation, live weather, per-station line filtering, hurry-zone blinking, and more.
 
@@ -16,20 +18,21 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 git clone <repo-url>
 cd infodisplay
 
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate   # Windows
-
-# Install dependencies
+# Install for local development (Pygame window)
 pip install -e ".[dev]"
+
+# Install for Pi Zero hardware (SSD1322 OLED)
+pip install -e ".[hardware]"
 ```
 
 ## Usage
 
 ```bash
-# Run the live departure display
+# Run the live departure display (Pygame window, default config.yaml)
 python -m infodisplay
+
+# Use a specific config file
+python -m infodisplay --config config.hardware.yaml
 
 # Run in fullscreen mode
 python -m infodisplay --fullscreen
@@ -43,8 +46,9 @@ python -m infodisplay --search "Alexanderplatz"
 # Fetch live departures and print to terminal
 python -m infodisplay --fetch-test
 
-# Render a test image to test_output.png
+# Render a test image to test_output.png (uses config for size/fonts)
 python -m infodisplay --render-test
+python -m infodisplay --config config.hardware.yaml --render-test
 
 # Enable debug logging
 python -m infodisplay --debug
@@ -53,19 +57,20 @@ python -m infodisplay --debug
 python -m infodisplay --refresh 15 --rotation 5
 ```
 
-Press **ESC** or close the window to quit.
+Press **ESC** or close the window to quit (Pygame mode).
 
 ### CLI Flags
 
 | Flag | Description |
 |------|-------------|
+| `--config PATH` | Path to YAML config file (default: `config.yaml`) |
 | `--station-id ID` | Single station mode (skips rotation) |
 | `--fullscreen` | Run in fullscreen |
 | `--refresh N` | Refresh interval in seconds |
 | `--rotation N` | Rotation interval in seconds |
 | `--search "name"` | Search for a station by name |
 | `--fetch-test` | Print live departures to stdout |
-| `--render-test` | Save a test render to `test_output.png` |
+| `--render-test` | Save a test render to `test_output_<mode>.png` |
 | `--debug` | Enable debug-level logging |
 
 ## Configuration
@@ -89,8 +94,9 @@ rotation:
   interval_seconds: 10              # Seconds per station before switching
 
 display:
-  width: 1024                       # Window width in pixels
-  height: 256                       # Window height in pixels
+  mode: pygame                      # "pygame" (window) or "ssd1322" (hardware OLED)
+  width: 1024                       # Window/display width in pixels
+  height: 256                       # Window/display height in pixels
   fullscreen: false
   fps: 60
   background_color: [0, 0, 0]      # RGB black
@@ -176,6 +182,62 @@ Toggle which transport types to include globally via the `filters` section: S-Ba
 
 All font sizes and padding scale dynamically based on display height (`height / 128`), so the layout works at any resolution.
 
+## Hardware Setup (Pi Zero + SSD1322)
+
+### Hardware Requirements
+
+- Raspberry Pi Zero W (or any Pi with SPI)
+- SSD1322 OLED display (256x64, SPI interface)
+- SPI wiring between the Pi and display
+
+### Installation on Pi Zero
+
+```bash
+# Enable SPI
+sudo raspi-config  # Interface Options → SPI → Enable
+
+# Install with hardware dependencies
+pip install -e ".[hardware]"
+```
+
+This installs `luma.oled`, which provides the SSD1322 driver over SPI.
+
+### Hardware Configuration
+
+Use the included `config.hardware.yaml` profile, or create your own with `mode: ssd1322`:
+
+```yaml
+display:
+  mode: ssd1322
+  width: 256
+  height: 64
+  fps: 10
+  show_remarks: false
+```
+
+Font sizes scale automatically based on display height. The hardware config uses smaller sizes appropriate for 256x64.
+
+### Running
+
+```bash
+# Run on hardware
+python -m infodisplay --config config.hardware.yaml
+
+# Preview what the hardware display will look like
+python -m infodisplay --config config.hardware.yaml --render-test
+```
+
+The SSD1322 is a 4-bit grayscale OLED — the amber RGB colors are automatically converted to grayscale. On hardware, there are no GUI events (no ESC key); stop with Ctrl+C or manage via systemd.
+
+### Display Modes
+
+| Mode      | Display              | Use Case                    |
+|-----------|----------------------|-----------------------------|
+| `pygame`  | Pygame window        | Local development, desktop  |
+| `ssd1322` | SSD1322 OLED via SPI | Pi Zero hardware deployment |
+
+Both modes use the same PIL-based renderer. The display backend is selected by the `mode` field in the config, with lazy imports so Pygame machines don't need `luma.oled` and vice versa.
+
 ## Architecture
 
 ```
@@ -188,8 +250,11 @@ BVG REST API  →  api.py (BVGClient)
                  app.py (InfoDisplayApp)
                 ╱   │   ╲
                ▼    ▼    ▼
-      renderer.py  display.py  weather.py
-      (PIL Image)  (Pygame)    (Open-Meteo)
+      renderer.py  display    weather.py
+      (PIL Image)  backends   (Open-Meteo)
+                   ╱    ╲
+         display.py    ssd1322_display.py
+         (Pygame)      (luma.oled)
 ```
 
 | Module | Purpose |
@@ -199,6 +264,7 @@ BVG REST API  →  api.py (BVGClient)
 | `api.py` | `BVGClient` wrapping the BVG Transport REST API v6 (departures, station search, name lookup) |
 | `renderer.py` | `DepartureRenderer` producing a PIL Image with column layout, dynamic scaling, scrolling text, and blink effects |
 | `display.py` | `DepartureDisplay` managing the Pygame window and keyboard/quit events |
+| `ssd1322_display.py` | `SSD1322Display` driving the SSD1322 OLED via SPI using `luma.oled` |
 | `app.py` | `InfoDisplayApp` orchestrating multi-station rotation, per-station refresh, weather fetching, filtering, and the main loop |
 | `weather.py` | `WeatherData` dataclass and `fetch_weather()` using the Open-Meteo free API |
 
@@ -206,7 +272,8 @@ BVG REST API  →  api.py (BVGClient)
 
 ```
 infodisplay/
-├── config.yaml                   # Main configuration
+├── config.yaml                   # Pygame development config
+├── config.hardware.yaml          # Pi Zero + SSD1322 hardware config
 ├── pyproject.toml                # Build and dependency config
 ├── README.md
 │
@@ -217,7 +284,8 @@ infodisplay/
 │   ├── models.py                 # Data models and parsing
 │   ├── api.py                    # BVG API client
 │   ├── renderer.py               # PIL image rendering
-│   ├── display.py                # Pygame display
+│   ├── display.py                # Pygame display backend
+│   ├── ssd1322_display.py        # SSD1322 OLED display backend
 │   ├── app.py                    # Main orchestrator
 │   └── weather.py                # Weather client
 │

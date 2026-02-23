@@ -574,6 +574,7 @@ def run_render_test(config=None) -> str:
         departures, "S Savignyplatz (Berlin)", weather=mock_weather
     )
 
-    output_path = str(_ROOT / "test_output.png")
+    mode = config.display.mode if config is not None else "pygame"
+    output_path = str(_ROOT / f"test_output_{mode}.png")
     img.save(output_path)
     return output_path

@@ -10,28 +10,26 @@ stations:
     walking_minutes: 10
     lines: ["S41", "S42"]
 
-rotation:
-  interval_seconds: 5
-
 display:
-  width: 1024
-  height: 256
-  #width: 256
-  #height: 64
-  fullscreen: false
-  fps: 60
+  mode: ssd1322
+  width: 256
+  height: 64
+  fps: 10
+  show_remarks: false
   background_color: [0, 0, 0]
   text_color: [255, 170, 0]
-  show_remarks: false
-
-refresh:
-  interval_seconds: 30
-  departure_count: 20
 
 fonts:
   font_header: "JetBrainsMono-Bold.ttf"
   font_main: "JetBrainsMono-Medium.ttf"
   font_remark: "JetBrainsMono-Regular.ttf"
+
+rotation:
+  interval_seconds: 10
+
+refresh:
+  interval_seconds: 30
+  departure_count: 10
 
 filters:
   suburban: true

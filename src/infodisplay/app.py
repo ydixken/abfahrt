@@ -7,7 +7,7 @@ import time
 
 from infodisplay.api import BVGClient
 from infodisplay.config import Config
-from infodisplay.display import DepartureDisplay, render_error
+from infodisplay.display import render_error
 from infodisplay.models import StationContext
 from infodisplay.renderer import DepartureRenderer
 from infodisplay.weather import WeatherData, fetch_weather
@@ -33,16 +33,24 @@ class InfoDisplayApp:
             remark_size=config.fonts.remark_size,
             show_remarks=config.display.show_remarks,
         )
-        self.display = DepartureDisplay(
-            width=config.display.width,
-            height=config.display.height,
-            fullscreen=config.display.fullscreen,
-        )
+        if config.display.mode == "ssd1322":
+            from infodisplay.ssd1322_display import SSD1322Display
+            self.display = SSD1322Display(
+                width=config.display.width,
+                height=config.display.height,
+            )
+        else:
+            from infodisplay.display import DepartureDisplay
+            self.display = DepartureDisplay(
+                width=config.display.width,
+                height=config.display.height,
+                fullscreen=config.display.fullscreen,
+            )
         self.stations: list[StationContext] = []
         self.active_station_index = 0
         self.last_rotation_time = 0.0
         self.weather: WeatherData | None = None
-        self.clock = __import__("pygame").time.Clock()
+        self.frame_interval = 1.0 / config.display.fps
 
     def _resolve_stations(self) -> None:
         """Resolve station names for all configured stations."""
@@ -181,6 +189,6 @@ class InfoDisplayApp:
                 self._check_rotation(scrolling_done)
 
                 self.display.update(img)
-                self.clock.tick(self.config.display.fps)
+                time.sleep(self.frame_interval)
         finally:
             self.display.close()

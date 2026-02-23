@@ -32,11 +32,30 @@ def run_fetch_test(config):
 
 
 def run_render_test(config):
-    """Render mock departures to test_output.png."""
+    """Render mock departures for both display modes."""
+    from infodisplay.config import Config, DisplayConfig
     from infodisplay.renderer import run_render_test as _run_render_test
 
+    # Render with the active config
     output_path = _run_render_test(config)
     print(f"Rendered test output to: {output_path}")
+
+    # Also render the other mode for comparison
+    from copy import deepcopy
+
+    other = deepcopy(config)
+    if config.display.mode == "ssd1322":
+        other.display.mode = "pygame"
+        other.display.width = 1024
+        other.display.height = 256
+        other.display.fps = 60
+    else:
+        other.display.mode = "ssd1322"
+        other.display.width = 256
+        other.display.height = 64
+        other.display.fps = 10
+    other_path = _run_render_test(other)
+    print(f"Rendered test output to: {other_path}")
 
 
 def run_search(config):
