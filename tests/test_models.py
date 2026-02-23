@@ -11,7 +11,7 @@ class TestParseDeparture:
         dep = parse_departure(sample_departure_raw)
         assert dep.line_name == "S7"
         assert dep.line_product == "suburban"
-        assert dep.direction == "S Potsdam Hauptbahnhof"
+        assert dep.direction == "Potsdam Hauptbahnhof"
         assert dep.when == "2026-02-22T21:05:00+01:00"
         assert dep.planned_when == "2026-02-22T21:03:00+01:00"
         assert dep.delay_seconds == 120

@@ -32,6 +32,7 @@ class InfoDisplayApp:
             departure_size=config.fonts.departure_size,
             remark_size=config.fonts.remark_size,
             show_remarks=config.display.show_remarks,
+            show_items=config.display.show_items,
         )
         if config.display.mode == "ssd1322":
             from infodisplay.ssd1322_display import SSD1322Display
@@ -158,16 +159,17 @@ class InfoDisplayApp:
                 # Show departures within hurry tolerance (3 min before walking time)
                 ctx = self.stations[self.active_station_index]
                 walk = ctx.walking_minutes
-                hurry = max(0, walk - 3)
+                hurry = max(1, walk - 3)
                 visible = [
                     d for d in ctx.departures
-                    if d.minutes_until is None or d.minutes_until >= hurry
+                    if d.minutes_until is not None and d.minutes_until >= hurry
                 ]
                 if ctx.lines:
-                    visible = [d for d in visible if d.line_name in ctx.lines]
-                # Fall back to all departures if filter removes everything
-                if not visible:
-                    visible = ctx.departures
+                    line_filtered = [d for d in visible if d.line_name in ctx.lines]
+                    if line_filtered:
+                        visible = line_filtered
+                    else:
+                        visible = []
 
                 scrolling_done = True
                 if visible:
@@ -176,10 +178,10 @@ class InfoDisplayApp:
                         weather_page=self.active_station_index,
                     )
                 elif ctx.last_fetch > 0:
-                    img = render_error(
-                        "Keine Abfahrten",
-                        self.config.display.width,
-                        self.config.display.height,
+                    img = self.renderer.render_empty(
+                        ctx.station_name, ctx.lines,
+                        weather=self.weather,
+                        weather_page=self.active_station_index,
                     )
                 else:
                     img = render_error(

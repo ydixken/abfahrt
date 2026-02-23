@@ -62,7 +62,7 @@ def parse_departure(raw: dict) -> Departure:
     return Departure(
         line_name=line_name,
         line_product=line_product,
-        direction=raw.get("direction", "").replace("⟲", "").replace("⟳", "").strip(),
+        direction=raw.get("direction", "").replace("⟲", "").replace("⟳", "").strip().removeprefix("S+U ").removeprefix("S ").removeprefix("U "),
         when=raw.get("when"),
         planned_when=raw.get("plannedWhen"),
         delay_seconds=raw.get("delay"),

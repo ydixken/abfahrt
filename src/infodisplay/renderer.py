@@ -49,6 +49,7 @@ class DepartureRenderer:
         departure_size: int = 18,
         remark_size: int = 13,
         show_remarks: bool = True,
+        show_items: int = 4,
     ) -> None:
         self.width = width
         self.height = height
@@ -57,11 +58,24 @@ class DepartureRenderer:
         self.scale = height / 128
         station_name_size = max(6, round(station_name_size * self.scale))
         header_size = max(6, round(header_size * self.scale))
-        departure_size = max(6, round(departure_size * self.scale))
         remark_size = max(6, round(remark_size * self.scale))
 
         # Scaled padding used throughout layout
         self.pad = max(2, round(8 * self.scale))
+
+        # Compute station header height first (needed for dynamic departure sizing)
+        station_name_pad = max(2, round(8 * self.scale))
+        header_gap = max(1, round(2 * self.scale))
+        self.station_name_height = station_name_size + station_name_pad
+        self.first_row_y = self.station_name_height + header_gap
+
+        # Dynamic departure font size: fill available space with show_items rows
+        row_pad = max(2, round(4 * self.scale))
+        available = height - self.first_row_y
+        departure_size = max(6, int(available / show_items - row_pad))
+
+        self.max_rows = show_items
+        self.row_height = departure_size + row_pad
 
         # Load fonts
         header_path = str(_FONTS_DIR / font_header)
@@ -69,7 +83,9 @@ class DepartureRenderer:
         remark_path = str(_FONTS_DIR / font_remark)
 
         # Station name uses ExtraBold if available, otherwise falls back to header font
-        extrabold_path = str(_FONTS_DIR / font_header.replace("Bold", "ExtraBold"))
+        extrabold_path = str(
+            _FONTS_DIR / font_header.replace("Bold", "ExtraBold")
+        )
         try:
             self.font_station_name = ImageFont.truetype(
                 extrabold_path, station_name_size
@@ -85,14 +101,9 @@ class DepartureRenderer:
         self.font_linie = ImageFont.truetype(header_path, departure_size)
         self.font_remark = ImageFont.truetype(remark_path, remark_size)
 
-        # Vertical layout (scaled)
-        self.station_name_height = station_name_size + max(
-            2, round(8 * self.scale)
-        )
-        self.header_y = self.station_name_height + max(1, round(2 * self.scale))
+        # Vertical layout
+        self.header_y = self.first_row_y
         self.header_height = 0
-        self.first_row_y = self.header_y
-        self.row_height = departure_size + max(2, round(4 * self.scale))
 
         self.show_remarks = show_remarks
 
@@ -154,7 +165,7 @@ class DepartureRenderer:
 
         # Draw departure rows
         scroll_time = time.time() - self._scroll_start
-        max_rows = (self.height - self.first_row_y) // self.row_height
+        max_rows = self.max_rows
         all_done = True
         for i, dep in enumerate(departures[:max_rows]):
             y = self.first_row_y + i * self.row_height
@@ -165,6 +176,45 @@ class DepartureRenderer:
                 all_done = False
 
         return img, all_done
+
+    def render_empty(
+        self,
+        station_name: str,
+        lines: list[str],
+        weather: WeatherData | None = None,
+        weather_page: int = 0,
+    ) -> Image.Image:
+        """Render the station header with a 'no departures' message below."""
+        img = Image.new("RGB", (self.width, self.height), BLACK)
+        draw = ImageDraw.Draw(img)
+
+        self._draw_station_name(draw, station_name, weather, weather_page)
+
+        # Center the message in the departure area
+        area_top = self.first_row_y
+        area_h = self.height - area_top
+        cy = area_top + area_h // 2
+
+        if lines:
+            line_str = " / ".join(lines)
+            msg = f"Keine Abfahrten: {line_str}"
+        else:
+            msg = "Keine Abfahrten"
+
+        msg = self._truncate_text(
+            msg, self.font_departure, self.width - self.pad * 2
+        )
+        bbox = self.font_departure.getbbox(msg)
+        text_w = bbox[2] - bbox[0]
+        draw.text(
+            ((self.width - text_w) // 2, cy),
+            msg,
+            fill=AMBER,
+            font=self.font_departure,
+            anchor="lm",
+        )
+
+        return img
 
     def _draw_station_name(
         self,
@@ -320,9 +370,18 @@ class DepartureRenderer:
         """
         x_linie = int(self.width * COL_LINIE)
         x_ziel = int(self.width * COL_ZIEL)
-        x_time = int(self.width * COL_ABFAHRT_IN)
-        x_dep_time = int(self.width * COL_DEP_TIME)
+        x_time = self.width - self.pad
         pad = self.pad
+
+        # Compute x_dep_time from right edge based on actual font metrics
+        _bb = self.font_departure.getbbox
+        min_area_w = (
+            (_bb("00")[2] - _bb("00")[0])
+            + (_bb("+00")[2] - _bb("+00")[0])
+            + (_bb("m")[2] - _bb("m")[0])
+        )
+        dep_time_w = _bb("00:00")[2] - _bb("00:00")[0]
+        x_dep_time = x_time - min_area_w - pad - dep_time_w
 
         # Blink state for hurry zone (walking_minutes - 3 to walking_minutes)
         minutes = dep.minutes_until
@@ -500,7 +559,7 @@ def run_render_test(config=None) -> str:
         Departure(
             line_name="S7",
             line_product="suburban",
-            direction="S Ahrensfelde Bhf (Berlin)",
+            direction="Ahrensfelde Bhf (Berlin)",
             when=(now + timedelta(minutes=5)).isoformat(),
             planned_when=(now + timedelta(minutes=5)).isoformat(),
             delay_seconds=0,
@@ -511,7 +570,7 @@ def run_render_test(config=None) -> str:
         Departure(
             line_name="S5",
             line_product="suburban",
-            direction="S Strausberg Bhf",
+            direction="Strausberg Bhf",
             when=(now + timedelta(minutes=8)).isoformat(),
             planned_when=(now + timedelta(minutes=8)).isoformat(),
             delay_seconds=0,
@@ -522,7 +581,7 @@ def run_render_test(config=None) -> str:
         Departure(
             line_name="S7",
             line_product="suburban",
-            direction="S Potsdam Hauptbahnhof",
+            direction="Potsdam Hauptbahnhof",
             when=(now + timedelta(minutes=14)).isoformat(),
             planned_when=(now + timedelta(minutes=12)).isoformat(),
             delay_seconds=120,
@@ -575,19 +634,22 @@ def run_render_test(config=None) -> str:
             departure_size=config.fonts.departure_size,
             remark_size=config.fonts.remark_size,
             show_remarks=config.display.show_remarks,
+            show_items=config.display.show_items,
         )
     else:
         renderer = DepartureRenderer()
     station_name = "S Savignyplatz (Berlin)"
     if config is not None and config.stations:
-        station_name = config.stations[0].name or f"Station {config.stations[0].id}"
-    img, _ = renderer.render(
-        departures, station_name, weather=mock_weather
-    )
+        station_name = (
+            config.stations[0].name or f"Station {config.stations[0].id}"
+        )
+    img, _ = renderer.render(departures, station_name, weather=mock_weather)
 
     mode = config.display.mode if config is not None else "pygame"
     if mode == "ssd1322":
         img = img.convert("L").convert("RGB")
-    output_path = str(_ROOT / f"test_output_{mode}.png")
+    assets_dir = _ROOT / "assets"
+    assets_dir.mkdir(exist_ok=True)
+    output_path = str(assets_dir / f"test_output_{mode}.png")
     img.save(output_path)
     return output_path

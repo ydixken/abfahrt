@@ -8,11 +8,15 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 
 **Pygame (1024x256)** — desktop development
 
-![Pygame render](test_output_pygame.png)
+![Pygame render](assets/test_output_pygame.png)
 
 **SSD1322 OLED (256x64)** — Pi Zero hardware
 
-![SSD1322 render](test_output_ssd1322.png)
+![SSD1322 render](assets/test_output_ssd1322.png)
+
+**No departures** — when filtered lines have no upcoming departures
+
+![Empty state](assets/test_output_empty.png)
 
 ## Requirements
 
@@ -54,7 +58,7 @@ python -m infodisplay --search "Alexanderplatz"
 # Fetch live departures and print to terminal
 python -m infodisplay --fetch-test
 
-# Render a test image to test_output.png (uses config for size/fonts)
+# Render a test image to assets/ (uses config for size/fonts)
 python -m infodisplay --render-test
 python -m infodisplay --config config.hardware.yaml --render-test
 
@@ -78,7 +82,7 @@ Press **ESC** or close the window to quit (Pygame mode).
 | `--rotation N` | Rotation interval in seconds |
 | `--search "name"` | Search for a station by name |
 | `--fetch-test` | Print live departures to stdout |
-| `--render-test` | Save a test render to `test_output_<mode>.png` |
+| `--render-test` | Save a test render to `assets/test_output_<mode>.png` |
 | `--debug` | Enable debug-level logging |
 
 ## Configuration

@@ -26,6 +26,7 @@ class DisplayConfig:
     fullscreen: bool = False
     fps: int = 30
     show_remarks: bool = True
+    show_items: int = 4
     background_color: list[int] = field(default_factory=lambda: [0, 0, 0])
     text_color: list[int] = field(default_factory=lambda: [255, 170, 0])
 
@@ -115,7 +116,7 @@ def _apply_yaml(config: Config, yaml_path: str) -> None:
 
     if "display" in data:
         d = data["display"]
-        for key in ("mode", "width", "height", "fullscreen", "fps", "show_remarks", "background_color", "text_color"):
+        for key in ("mode", "width", "height", "fullscreen", "fps", "show_remarks", "show_items", "background_color", "text_color"):
             if key in d:
                 setattr(config.display, key, d[key])
 

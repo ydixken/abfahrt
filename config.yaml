@@ -20,6 +20,7 @@ display:
   #height: 64
   fullscreen: false
   fps: 60
+  show_items: 4
   background_color: [0, 0, 0]
   text_color: [255, 170, 0]
   show_remarks: false
