@@ -10,10 +10,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
 
+# Project root directory (three levels up: display.py -> abfahrt -> src -> root)
 _ROOT = Path(__file__).resolve().parent.parent.parent
+# Font directory at project root, shared by all display backends
 _FONTS_DIR = _ROOT / "fonts"
 
+# Amber RGB matching real BVG departure board color
 AMBER = (255, 170, 0)
+# Pure black background
 BLACK = (0, 0, 0)
 
 
@@ -21,6 +25,16 @@ class DepartureDisplay:
     """Manages the Pygame window that displays the departure board."""
 
     def __init__(self, width: int = 1520, height: int = 180, fullscreen: bool = False) -> None:
+        """Initialize the Pygame display window.
+
+        Args:
+            width: Window width in pixels. Default 1520 matches the renderer
+                default for a wide departure board preview.
+            height: Window height in pixels. Default 180 matches the renderer
+                default.
+            fullscreen: If True, open in fullscreen mode instead of a windowed
+                display. Useful for kiosk-style setups.
+        """
         pygame.init()
         flags = 0
         if fullscreen:
@@ -34,6 +48,8 @@ class DepartureDisplay:
 
     def update(self, pil_image: Image.Image) -> None:
         """Convert a PIL Image to a Pygame surface and display it."""
+        # PIL images use raw RGB bytes. Pygame ingests them directly via
+        # fromstring().
         raw = pil_image.tobytes()
         surface = pygame.image.fromstring(raw, pil_image.size, pil_image.mode)
         self.screen.blit(surface, (0, 0))
@@ -65,6 +81,7 @@ def render_error(message: str, width: int = 1520, height: int = 180) -> Image.Im
     try:
         font = ImageFont.truetype(font_path, 20)
     except OSError:
+        # Falls back to Pillow's built-in bitmap font if .ttf missing
         font = ImageFont.load_default()
 
     bbox = draw.textbbox((0, 0), message, font=font)

@@ -10,7 +10,8 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# Open-Meteo free API
+# Open-Meteo free forecast API — no API key required, no rate limit
+# for reasonable use. Docs: https://open-meteo.com/en/docs
 BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
 
@@ -18,11 +19,11 @@ BASE_URL = "https://api.open-meteo.com/v1/forecast"
 class WeatherData:
     """Current weather snapshot with daily extremes and precipitation forecast."""
 
-    current_temp: float  # °C
-    daily_low: float  # °C
-    daily_high: float  # °C
-    precip_next_12h: list[float]  # mm per hour, next 12 entries
-    fetch_time: float = 0.0
+    current_temp: float   # Current temperature in °C
+    daily_low: float      # Today's minimum temperature in °C
+    daily_high: float     # Today's maximum temperature in °C
+    precip_next_12h: list[float]  # Hourly precipitation in mm, next 12 hours
+    fetch_time: float = 0.0       # Unix timestamp when this data was fetched (for cache expiry)
 
     @property
     def precip_max(self) -> float:
@@ -49,6 +50,9 @@ def fetch_weather(lat: float, lon: float) -> WeatherData:
     Returns a WeatherData with current temp, daily low/high, and
     hourly precipitation for the next 12 hours.
     """
+    # Open-Meteo API parameters: current=real-time temp at 2m, daily=min/max,
+    # hourly=precipitation per hour (mm), timezone=Berlin for daily boundaries,
+    # forecast_hours=12 limits hourly data.
     params = {
         "latitude": lat,
         "longitude": lon,
@@ -66,6 +70,7 @@ def fetch_weather(lat: float, lon: float) -> WeatherData:
     current_temp = data["current"]["temperature_2m"]
     daily_low = data["daily"]["temperature_2m_min"][0]
     daily_high = data["daily"]["temperature_2m_max"][0]
+    # Safety truncation: ensure max 12 hourly values even if API returns extras.
     precip = data["hourly"]["precipitation"][:12]
 
     return WeatherData(

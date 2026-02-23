@@ -12,6 +12,7 @@ from abfahrt.models import Departure
 
 @pytest.fixture
 def client():
+    """A BVGClient initialized with default config (no YAML file)."""
     config = load_config(yaml_path="/nonexistent.yaml", cli_args=[])
     return BVGClient(config)
 
@@ -26,8 +27,11 @@ def mock_departures_response(sample_departures_list):
 
 
 class TestGetDepartures:
+    """Tests for BVGClient.get_departures() HTTP call, URL construction, and parameter passing."""
+
     @patch("abfahrt.api.requests.Session.get")
     def test_calls_correct_url(self, mock_get, client, mock_departures_response):
+        """Verify that the request URL contains the station ID and '/departures' path."""
         mock_get.return_value = mock_departures_response
         client.get_departures("900023201")
 
@@ -38,6 +42,7 @@ class TestGetDepartures:
 
     @patch("abfahrt.api.requests.Session.get")
     def test_passes_filter_params(self, mock_get, client, mock_departures_response):
+        """Verify that transport type filters and duration are passed as query parameters."""
         mock_get.return_value = mock_departures_response
         client.get_departures("900023201")
 
@@ -48,6 +53,7 @@ class TestGetDepartures:
 
     @patch("abfahrt.api.requests.Session.get")
     def test_returns_departure_list(self, mock_get, client, mock_departures_response):
+        """Verify that get_departures() returns a list of 4 raw departure dicts."""
         mock_get.return_value = mock_departures_response
         result = client.get_departures("900023201")
         assert isinstance(result, list)
@@ -55,20 +61,25 @@ class TestGetDepartures:
 
     @patch("abfahrt.api.requests.Session.get")
     def test_timeout(self, mock_get, client):
+        """Verify that a requests.Timeout exception propagates to the caller."""
         mock_get.side_effect = requests.exceptions.Timeout("Connection timed out")
         with pytest.raises(requests.exceptions.Timeout):
             client.get_departures("900023201")
 
     @patch("abfahrt.api.requests.Session.get")
     def test_connection_error(self, mock_get, client):
+        """Verify that a ConnectionError exception propagates to the caller."""
         mock_get.side_effect = requests.exceptions.ConnectionError("No connection")
         with pytest.raises(requests.exceptions.ConnectionError):
             client.get_departures("900023201")
 
 
 class TestSearchStations:
+    """Tests for BVGClient.search_stations() location search endpoint."""
+
     @patch("abfahrt.api.requests.Session.get")
     def test_search_calls_locations(self, mock_get, client):
+        """Verify that search_stations() calls the /locations endpoint with query and results params."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = [
             {"id": "900100003", "name": "S+U Alexanderplatz", "type": "stop"},
@@ -86,8 +97,11 @@ class TestSearchStations:
 
 
 class TestGetStationName:
+    """Tests for BVGClient.get_station_name() station name resolution."""
+
     @patch("abfahrt.api.requests.Session.get")
     def test_returns_name(self, mock_get, client):
+        """Verify that get_station_name() extracts the 'name' field from the API response."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"id": "900023201", "name": "S Savignyplatz"}
         mock_resp.raise_for_status.return_value = None
@@ -98,8 +112,11 @@ class TestGetStationName:
 
 
 class TestFetchParsedDepartures:
+    """Tests for BVGClient.fetch_parsed_departures() end-to-end parsing, sorting, and cancellation handling."""
+
     @patch("abfahrt.api.requests.Session.get")
     def test_returns_sorted_departures(self, mock_get, client, sample_departures_list):
+        """Verify that fetch_parsed_departures() returns Departure objects (not raw dicts)."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"departures": sample_departures_list}
         mock_resp.raise_for_status.return_value = None
@@ -110,6 +127,7 @@ class TestFetchParsedDepartures:
 
     @patch("abfahrt.api.requests.Session.get")
     def test_sorted_by_when(self, mock_get, client, sample_departures_list):
+        """Verify that parsed departures are sorted chronologically by departure time."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"departures": sample_departures_list}
         mock_resp.raise_for_status.return_value = None
@@ -122,6 +140,7 @@ class TestFetchParsedDepartures:
 
     @patch("abfahrt.api.requests.Session.get")
     def test_keeps_cancelled(self, mock_get, client):
+        """Verify that cancelled departures are preserved in the parsed output with is_cancelled=True."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "departures": [

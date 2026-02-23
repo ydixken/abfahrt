@@ -1,4 +1,9 @@
-"""PIL-based departure board renderer."""
+"""PIL-based departure board renderer.
+
+Renders an amber-on-black BVG Abfahrtsanzeige (departure display) as a
+PIL Image. Supports dynamic scaling, hurry-zone blinking, cancelled
+departure indicators, and horizontally scrolling remarks.
+"""
 
 from __future__ import annotations
 
@@ -17,25 +22,63 @@ _FONTS_DIR = _ROOT / "fonts"
 
 # Amber color matching real BVG departure boards
 AMBER = (255, 170, 0)
+# Pure black background
 BLACK = (0, 0, 0)
 
-# Column positions as percentage of display width
+# Board column layout (values are percentages of display width):
+#
+#   | Linie | sep | Ziel (destination) | Remarks | HH:MM | Xm |
+#   | 2%    |     | 16%                | 58%     | 73%   | 98%|
+#
+# "Linie" and "Ziel" are left-aligned. "Xm" (minutes countdown) is
+# right-aligned to the display edge. A 1px vertical separator divides
+# Linie from Ziel at 14% width.
+
+# Left edge of the line name column (e.g. "S7", "M21")
 COL_LINIE = 0.02
+# Left edge of the destination column
 COL_ZIEL = 0.16
+# Left edge of the scrolling remarks column (hidden when show_remarks=False)
 COL_REMARKS = 0.58
+# Left edge of the "HH:MM" departure time column
 COL_DEP_TIME = 0.73
-COL_ABFAHRT_IN = 0.98  # right-aligned
+# Right edge of the "Xm" minutes-until column (right-aligned)
+COL_ABFAHRT_IN = 0.98
 
-# Scrolling parameters
-SCROLL_SPEED = 30  # pixels per second
-SCROLL_PAUSE = 2.0  # seconds to pause at each end
+# Pixels per second for horizontal text scroll
+SCROLL_SPEED = 30
+# Seconds to hold at start/end of scroll cycle
+SCROLL_PAUSE = 2.0
 
-# Blink parameters
-BLINK_PERIOD = 2.0  # full blink cycle in seconds (on + off)
+# Full blink cycle in seconds. First half = hurry-zone inverted colors
+# (black on amber), second half = normal (amber on black).
+BLINK_PERIOD = 2.0
 
 
 class DepartureRenderer:
-    """Renders a departure board as a PIL Image."""
+    """Renders a BVG departure board as a PIL Image.
+
+    Produces an amber-on-black image mimicking a real BVG Abfahrtsanzeige
+    (departure display). The board has a station name header bar at the top,
+    followed by rows of departures with columns for line name, destination,
+    remarks, departure time, and minutes until departure.
+
+    All font sizes and spacing scale dynamically based on display height,
+    using 128px as the base reference (the native height of an SSD1322
+    OLED at 2x). This means the same code renders correctly at 64px
+    (hardware), 180px (default Pygame), or any other resolution.
+
+    Visual effects:
+    - Hurry-zone blinking: departures the user might still catch blink
+      their time columns with inverted amber/black colors.
+    - Cancelled departures: destination alternates between the original
+      text and "Fällt aus" (cancelled) every second.
+    - Scrolling remarks: remarks that overflow their column scroll
+      horizontally with pauses at each end.
+
+    The renderer is stateless except for scroll timing — call render()
+    each frame and it produces the correct image for the current moment.
+    """
 
     def __init__(
         self,
@@ -51,25 +94,55 @@ class DepartureRenderer:
         show_remarks: bool = True,
         show_items: int = 4,
     ) -> None:
+        """Initialize the departure board renderer.
+
+        Args:
+            width: Display width in pixels. Default 1520 for Pygame preview.
+            height: Display height in pixels. Default 180 for Pygame preview.
+            font_header: Filename of the bold font used for headers and line
+                names. Must exist in the project fonts/ directory.
+            font_main: Filename of the medium-weight font used for departure
+                text (destination, times, minutes).
+            font_remark: Filename of the regular-weight font used for remarks.
+            station_name_size: Base font size in pixels for the station name
+                header. Scaled dynamically by display height.
+            header_size: Base font size in pixels for column header labels
+                (Linie, Ziel, Abfahrt, in Min). Scaled dynamically.
+            departure_size: Base font size in pixels for departure rows.
+                Overridden by dynamic sizing to fill available vertical space.
+            remark_size: Base font size in pixels for remark text. Scaled
+                dynamically by display height.
+            show_remarks: Whether to display the scrolling remarks column.
+                When False, the destination column expands to fill the space.
+            show_items: Number of departure rows to display. Font size scales
+                to fill the available height with this many rows.
+        """
         self.width = width
         self.height = height
 
-        # Dynamic scaling: base sizes are designed for 128px height
+        # Base reference height is 128px (SSD1322 OLED native height at 2x).
+        # All padding, gaps, and font sizes are multiplied by this scale
+        # factor so the layout adapts to any display resolution.
         self.scale = height / 128
         station_name_size = max(6, round(station_name_size * self.scale))
         header_size = max(6, round(header_size * self.scale))
         remark_size = max(6, round(remark_size * self.scale))
 
-        # Scaled padding used throughout layout
+        # Universal inter-element padding used for column gaps and margins.
+        # Minimum 2px ensures readability even at very small scales.
         self.pad = max(2, round(8 * self.scale))
 
-        # Compute station header height first (needed for dynamic departure sizing)
+        # The station name lives in an amber bar at the top. Its height is
+        # font size plus padding. first_row_y is where departure rows begin,
+        # separated by a small gap below the header.
         station_name_pad = max(2, round(8 * self.scale))
         header_gap = max(1, round(2 * self.scale))
         self.station_name_height = station_name_size + station_name_pad
         self.first_row_y = self.station_name_height + header_gap
 
-        # Dynamic departure font size: fill available space with show_items rows
+        # Departure font size is computed dynamically: divide available
+        # vertical space (below header) by number of rows. This fills the
+        # display evenly regardless of resolution.
         row_pad = max(2, round(4 * self.scale))
         available = height - self.first_row_y
         departure_size = max(6, int(available / show_items - row_pad))
@@ -77,12 +150,14 @@ class DepartureRenderer:
         self.max_rows = show_items
         self.row_height = departure_size + row_pad
 
-        # Load fonts
+        # Fonts loaded from project fonts/ dir. Three weights: Bold for
+        # headers/line names, Medium for departures, Regular for remarks.
         header_path = str(_FONTS_DIR / font_header)
         main_path = str(_FONTS_DIR / font_main)
         remark_path = str(_FONTS_DIR / font_remark)
 
-        # Station name uses ExtraBold if available, otherwise falls back to header font
+        # Station name uses ExtraBold for visual hierarchy. Falls back to
+        # Bold if ExtraBold variant doesn't exist.
         extrabold_path = str(
             _FONTS_DIR / font_header.replace("Bold", "ExtraBold")
         )
@@ -95,6 +170,8 @@ class DepartureRenderer:
                 header_path, station_name_size
             )
         self.font_header = ImageFont.truetype(header_path, header_size)
+        # Mid-size font for clock and weather in header bar. Average of
+        # header and station name sizes.
         info_size = max(6, round((header_size + station_name_size) // 2))
         self.font_info = ImageFont.truetype(header_path, info_size)
         self.font_departure = ImageFont.truetype(main_path, departure_size)
@@ -107,7 +184,8 @@ class DepartureRenderer:
 
         self.show_remarks = show_remarks
 
-        # Scroll start time
+        # Scroll timer origin. Reset on station rotation so each station's
+        # remarks start from beginning.
         self._scroll_start = time.time()
 
     def _truncate_text(
@@ -116,12 +194,23 @@ class DepartureRenderer:
         font: ImageFont.FreeTypeFont,
         max_width: int,
     ) -> str:
-        """Truncate text with ellipsis if it exceeds max_width pixels."""
+        """Truncate text with ellipsis if it exceeds max_width pixels.
+
+        Args:
+            text: The text string to potentially truncate.
+            font: The PIL font used to measure text width.
+            max_width: Maximum allowed width in pixels.
+
+        Returns:
+            The original text if it fits, or a truncated version with
+            a ".." suffix.
+        """
         if not text:
             return ""
         bbox = font.getbbox(text)
         if bbox[2] - bbox[0] <= max_width:
             return text
+        # ".." (not "...") saves horizontal space on narrow displays
         ellipsis = ".."
         for end in range(len(text), 0, -1):
             candidate = text[:end] + ellipsis
@@ -155,7 +244,8 @@ class DepartureRenderer:
         # Draw station name at the top
         self._draw_station_name(draw, station_name, weather, weather_page)
 
-        # Vertical separator between Linie and Ziel columns
+        # Vertical 1px line between Linie and Ziel columns, matching real
+        # BVG aesthetic.
         sep_x = int(self.width * 0.14)
         draw.line(
             [(sep_x, self.first_row_y), (sep_x, self.height)],
@@ -163,9 +253,11 @@ class DepartureRenderer:
             width=1,
         )
 
-        # Draw departure rows
+        # Elapsed time since scroll started for positioning scrolling remarks.
         scroll_time = time.time() - self._scroll_start
         max_rows = self.max_rows
+        # Tracks if all remarks completed one scroll cycle. Used to gate
+        # station rotation.
         all_done = True
         for i, dep in enumerate(departures[:max_rows]):
             y = self.first_row_y + i * self.row_height
@@ -190,7 +282,8 @@ class DepartureRenderer:
 
         self._draw_station_name(draw, station_name, weather, weather_page)
 
-        # Center the message in the departure area
+        # Center the message vertically within the departure area (below
+        # the station name header bar) so it appears balanced on screen.
         area_top = self.first_row_y
         area_h = self.height - area_top
         cy = area_top + area_h // 2
@@ -224,6 +317,8 @@ class DepartureRenderer:
         weather_page: int = 0,
     ) -> None:
         """Draw the station name centered on a full-width amber block, with clock on the right and weather on the left."""
+        # Full-width amber rectangle as header background, matching real
+        # BVG signage.
         draw.rectangle(
             [(0, 0), (self.width, self.station_name_height)],
             fill=AMBER,
@@ -242,7 +337,8 @@ class DepartureRenderer:
             anchor="lm",
         )
 
-        # Weather info (right-aligned), alternates between temp and precip per station rotation
+        # Weather alternates between temperature and precipitation on each
+        # station rotation. weather_page % 2 toggles views.
         if weather is not None:
             temp_str = (
                 f"{weather.current_temp:.0f}C"
@@ -278,7 +374,7 @@ class DepartureRenderer:
             )
 
     def _draw_header(self, draw: ImageDraw.ImageDraw) -> None:
-        """Draw the column header row below the station name."""
+        """Draw column header labels (Linie, Ziel, Abfahrt, in Min) below the station name bar."""
         y = self.header_y
         draw.text(
             (int(self.width * COL_LINIE), y),
@@ -331,9 +427,12 @@ class DepartureRenderer:
             draw.text((x, y), text, fill=AMBER, font=font)
             return True
 
-        # Text overflows - scroll right once, then hold at end
+        # Total scroll distance = text overflow beyond column.
+        # Duration = distance / speed.
         scroll_distance = text_w - max_width
         scroll_duration = scroll_distance / SCROLL_SPEED
+        # One scroll cycle: pause -> scroll -> pause.
+        # scroll_done is True after full cycle.
         cycle = SCROLL_PAUSE + scroll_duration + SCROLL_PAUSE
 
         scroll_done = scroll_time >= cycle
@@ -346,7 +445,8 @@ class DepartureRenderer:
             offset = scroll_distance
         offset = max(0, min(int(offset), scroll_distance))
 
-        # Render full text onto a temp strip, then crop the visible window
+        # Render full text onto temp strip, crop visible window. Avoids
+        # clipping artifacts.
         temp = Image.new("RGB", (text_w, self.row_height), BLACK)
         temp_draw = ImageDraw.Draw(temp)
         temp_draw.text((0, 0), text, fill=AMBER, font=font)
@@ -373,7 +473,8 @@ class DepartureRenderer:
         x_time = self.width - self.pad
         pad = self.pad
 
-        # Compute x_dep_time from right edge based on actual font metrics
+        # Reserve space for widest possible minutes display '00+00m'.
+        # Ensures column alignment regardless of digit count.
         _bb = self.font_departure.getbbox
         min_area_w = (
             (_bb("00")[2] - _bb("00")[0])
@@ -383,8 +484,9 @@ class DepartureRenderer:
         dep_time_w = _bb("00:00")[2] - _bb("00:00")[0]
         x_dep_time = x_time - min_area_w - pad - dep_time_w
 
-        # Blink state for hurry zone (walking_minutes - 3 to walking_minutes)
-        # Cancelled departures never blink
+        # Hurry zone: departures within [walking_minutes-3, walking_minutes]
+        # blink. First half of BLINK_PERIOD = inverted, second = normal.
+        # Cancelled departures never blink.
         minutes = dep.minutes_until
         hurry_threshold = max(0, walking_minutes - 3)
         blink_on = (
@@ -413,7 +515,9 @@ class DepartureRenderer:
         else:
             max_w_ziel = x_dep_time - x_ziel - pad
 
-        # Ziel (destination) — cancelled departures alternate with "Fällt aus"
+        # Cancelled departures alternate between original destination and
+        # 'Fällt aus' every second, preserving info while signaling
+        # cancellation.
         if dep.is_cancelled and time.time() % BLINK_PERIOD >= BLINK_PERIOD / 2:
             ziel_text = "Fällt aus"
         else:
@@ -453,9 +557,8 @@ class DepartureRenderer:
         min_label = "m"
         delay_text = f"+{dep.delay_minutes}" if dep.delay_minutes > 0 else ""
 
-        # Measure widths for alignment
-        # Layout from right: "min" | delay | number (right-aligned in 2-digit slot)
-        # Result: 8+2min or 14min
+        # Right-aligned minutes layout, right-to-left: [number][+delay][m].
+        # Number right-aligned in 2-digit slot for visual alignment.
         two_digit_bbox = self.font_departure.getbbox("00")
         two_digit_w = two_digit_bbox[2] - two_digit_bbox[0]
         label_bbox = self.font_departure.getbbox(min_label)
@@ -467,8 +570,8 @@ class DepartureRenderer:
             delay_bbox = self.font_departure.getbbox(delay_text)
             delay_w = delay_bbox[2] - delay_bbox[0]
 
-        label_x = x_time - label_w  # "min" right-aligned to edge
-        delay_x = label_x - delay_w  # "+2" left of "min"
+        label_x = x_time - label_w  # "m" right-aligned to edge
+        delay_x = label_x - delay_w  # "+2" left of "m"
         num_x = delay_x - num_w  # number left of delay
         num_slot_x = delay_x - two_digit_w  # 2-digit slot left edge
 
@@ -484,10 +587,10 @@ class DepartureRenderer:
             delay_x += shift
             label_x += shift
 
-        # Blink only the text of dep time + minutes (not background)
+        # Hurry-zone blink ON: amber rectangles behind text, text in black.
+        # Creates inverse-video effect alternating with normal rendering.
         if blink_on:
             blink_margin = max(1, round(2 * self.scale))
-            # Dep time text highlight
             dt_bbox = self.font_departure.getbbox(dep_time_text)
             dt_w = dt_bbox[2] - dt_bbox[0]
             draw.rectangle(
@@ -559,6 +662,8 @@ def run_render_test(config=None) -> str:
     DepartureRenderer, and saves to test_output.png in the project root.
     Uses config for display size and font settings if provided.
     """
+    # Mock departures: normal (S7, S5), delayed (+2min S7), cancelled (RE1).
+    # 5-min departure falls in hurry zone.
     now = datetime.now(timezone.utc)
     departures = [
         Departure(
@@ -651,8 +756,9 @@ def run_render_test(config=None) -> str:
         )
         walking_minutes = config.stations[0].walking_minutes
 
-    # Force blink ON so the static image always shows hurry-zone highlighting
-    blink_on_time = 0.0  # 0.0 % BLINK_PERIOD < BLINK_PERIOD / 2 → blink ON
+    # Monkey-patch time.time() to force blink ON. At t=0.0, blink condition
+    # is True. Makes static test image deterministic.
+    blink_on_time = 0.0
     import time as _time_mod
     _original_time = _time_mod.time
     _time_mod.time = lambda: blink_on_time
@@ -665,6 +771,7 @@ def run_render_test(config=None) -> str:
         _time_mod.time = _original_time
 
     mode = config.display.mode if config is not None else "pygame"
+    # RGB->grayscale->RGB round-trip simulates 4-bit SSD1322 OLED output.
     if mode == "ssd1322":
         img = img.convert("L").convert("RGB")
     assets_dir = _ROOT / "assets"

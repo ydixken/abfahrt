@@ -40,7 +40,8 @@ def run_render_test(config):
     output_path = _run_render_test(config)
     print(f"Rendered test output to: {output_path}")
 
-    # Also render the other mode for comparison
+    # After rendering active mode, also render the other mode for comparison.
+    # Desktop=1024x256, hardware=256x64.
     from copy import deepcopy
 
     other = deepcopy(config)
@@ -82,9 +83,18 @@ def run_app(config):
 
 
 def main():
+    """CLI entry point for the abfahrt application.
+
+    Loads configuration (defaults -> YAML -> CLI args), sets up logging
+    to stderr, then dispatches to one of four modes based on CLI flags:
+      --fetch-test:  print live departures to stdout and exit
+      --render-test: save test render images to assets/ and exit
+      --search:      look up station IDs by name and exit
+      (default):     run the full departure display application
+    """
     config = load_config()
 
-    # Set up logging
+    # Log to stderr so stdout is clean for --fetch-test and --search output.
     level = logging.DEBUG if config.debug else logging.INFO
     logging.basicConfig(
         level=level,

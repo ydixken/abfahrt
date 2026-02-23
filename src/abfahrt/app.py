@@ -19,6 +19,17 @@ class InfoDisplayApp:
     """Orchestrates fetching, rendering, and displaying departure boards."""
 
     def __init__(self, config: Config) -> None:
+        """Initialize the departure display application.
+
+        Creates the API client, renderer, and display backend. The display
+        backend is selected at runtime based on config.display.mode, with
+        lazy imports so neither Pygame nor luma.oled is required unless
+        actually used. This allows the same codebase to run on a desktop
+        (Pygame) or Raspberry Pi (SSD1322) without installing unused deps.
+
+        Args:
+            config: Fully assembled application configuration.
+        """
         self.config = config
         self.client = BVGClient(config)
         self.renderer = DepartureRenderer(
@@ -34,6 +45,8 @@ class InfoDisplayApp:
             show_remarks=config.display.show_remarks,
             show_items=config.display.show_items,
         )
+        # Lazy import: only import the selected display backend.
+        # Avoids requiring pygame on Pi or luma.oled on desktop.
         if config.display.mode == "ssd1322":
             from abfahrt.ssd1322_display import SSD1322Display
             self.display = SSD1322Display(
@@ -47,6 +60,7 @@ class InfoDisplayApp:
                 height=config.display.height,
                 fullscreen=config.display.fullscreen,
             )
+        # Runtime state for multi-station rotation
         self.stations: list[StationContext] = []
         self.active_station_index = 0
         self.last_rotation_time = 0.0
@@ -115,9 +129,12 @@ class InfoDisplayApp:
         if len(self.stations) <= 1:
             return
         now = time.time()
+        # Rotation is scroll-gated: only switch when all scrolling remarks
+        # completed one full cycle.
         if now - self.last_rotation_time >= self.config.rotation.interval_seconds and scrolling_done:
             self.active_station_index = (self.active_station_index + 1) % len(self.stations)
             self.last_rotation_time = now
+            # Reset scroll timer so new station's remarks start from beginning
             self.renderer._scroll_start = time.time()
             logger.info("Rotated to station: %s", self.stations[self.active_station_index].station_name)
 
@@ -155,8 +172,9 @@ class InfoDisplayApp:
                 for ctx in self.stations:
                     self._refresh_station(ctx)
 
-                # Render the active station (filter by walking time + line)
-                # Show departures within hurry tolerance (3 min before walking time)
+                # Hurry-zone filtering: hide departures user cannot catch.
+                # hurry = walking_minutes - 3, clamped to min 1.
+                # Departures within [hurry, walking_minutes] blink.
                 ctx = self.stations[self.active_station_index]
                 walk = ctx.walking_minutes
                 hurry = max(1, walk - 3)
@@ -164,6 +182,8 @@ class InfoDisplayApp:
                     d for d in ctx.departures
                     if d.minutes_until is not None and d.minutes_until >= hurry
                 ]
+                # Per-station line filter. If configured lines produce zero
+                # results, show empty state.
                 if ctx.lines:
                     line_filtered = [d for d in visible if d.line_name in ctx.lines]
                     if line_filtered:
@@ -171,10 +191,15 @@ class InfoDisplayApp:
                     else:
                         visible = []
 
+                # Three rendering paths:
+                # 1) departures exist -> board
+                # 2) no departures but fetch ok -> 'Keine Abfahrten'
+                # 3) no fetch yet -> 'Netzwerkfehler'
                 scrolling_done = True
                 if visible:
                     img, scrolling_done = self.renderer.render(
                         visible, ctx.station_name, walk, self.weather,
+                        # weather_page cycles with station index to alternate temp/precip display
                         weather_page=self.active_station_index,
                     )
                 elif ctx.last_fetch > 0:
