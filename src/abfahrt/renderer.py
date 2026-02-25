@@ -290,7 +290,9 @@ class DepartureRenderer:
         area_h = self.height - area_top
         cy = area_top + area_h // 2
 
-        if lines:
+        if not fetch_ok:
+            msg = "Keine Daten empfangen!"
+        elif lines:
             line_str = " / ".join(lines)
             msg = f"Keine Abfahrten: {line_str}"
         else:
@@ -343,26 +345,21 @@ class DepartureRenderer:
         # Connection status dot at the far right, weather text shifted left
         # to make room. Dot is always present; when connected it's BLACK
         # (invisible against amber bar), when disconnected it blinks.
-        dot_radius = max(2, round(3 * self.scale))
-        dot_gap = max(2, round(4 * self.scale))
-        dot_cx = self.width - margin - dot_radius
-        dot_cy = cy
-        if fetch_ok:
-            dot_fill = BLACK
-        else:
-            dot_fill = BLACK if time.time() % BLINK_PERIOD < BLINK_PERIOD / 2 else AMBER
-        draw.ellipse(
-            [
-                (dot_cx - dot_radius, dot_cy - dot_radius),
-                (dot_cx + dot_radius, dot_cy + dot_radius),
-            ],
-            fill=dot_fill,
-        )
+        alert_gap = max(2, round(4 * self.scale))
+        alert_x = self.width - margin
+        if not fetch_ok:
+            blink_on = time.time() % BLINK_PERIOD < BLINK_PERIOD / 2
+            if blink_on:
+                draw.text(
+                    (alert_x, cy), "!", fill=BLACK, font=self.font_station_name,
+                    anchor="rm",
+                )
 
         # Weather alternates between temperature and precipitation on each
         # station rotation. weather_page % 2 toggles views.
-        # Right-aligned to the left of the status dot.
-        weather_anchor_x = dot_cx - dot_radius - dot_gap
+        # Right-aligned to the left of the status indicator.
+        alert_w = draw.textbbox((0, 0), "!", font=self.font_station_name)[2] if not fetch_ok else 0
+        weather_anchor_x = alert_x - alert_w - alert_gap
         if weather is not None:
             temp_str = (
                 f"{weather.current_temp:.0f}C"

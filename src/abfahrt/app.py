@@ -7,7 +7,7 @@ import time
 
 from abfahrt.api import BVGClient
 from abfahrt.config import Config
-from abfahrt.display import render_error
+from abfahrt.display import render_boot_screen, render_error
 from abfahrt.models import StationContext
 from abfahrt.renderer import DepartureRenderer
 from abfahrt.weather import WeatherData, fetch_weather
@@ -67,13 +67,19 @@ class InfoDisplayApp:
         self.weather: WeatherData | None = None
         self.frame_interval = 1.0 / config.display.fps
 
+    def _show_boot(self, status: str) -> None:
+        """Render and display a boot screen with the given status message."""
+        img = render_boot_screen(status, self.config.display.width, self.config.display.height)
+        self.display.update(img)
+        self.display.handle_events()
+
     def _resolve_stations(self) -> None:
         """Resolve station names for all configured stations."""
         for station_cfg in self.config.stations:
             name = station_cfg.name
             if not name:
                 try:
-                    name = self.client.get_station_name(station_cfg.id)
+                    name = self.client.get_station_name(station_cfg.id, timeout=3)
                     logger.info("Resolved station %s → %s", station_cfg.id, name)
                 except Exception:
                     logger.warning("Could not resolve name for station %s", station_cfg.id)
@@ -87,14 +93,14 @@ class InfoDisplayApp:
                 )
             )
 
-    def _refresh_station(self, ctx: StationContext) -> None:
+    def _refresh_station(self, ctx: StationContext, timeout: int = 10) -> None:
         """Fetch fresh departures for a station if needed."""
         if not ctx.needs_refresh(self.config.refresh.interval_seconds):
             return
         try:
             logger.debug("Fetching departures for %s ...", ctx.station_name)
             t0 = time.time()
-            ctx.departures = self.client.fetch_parsed_departures(ctx.station_id)
+            ctx.departures = self.client.fetch_parsed_departures(ctx.station_id, timeout=timeout)
             elapsed = time.time() - t0
             ctx.last_fetch = time.time()
             ctx.fetch_ok = True
@@ -149,6 +155,8 @@ class InfoDisplayApp:
                 self.config.refresh.interval_seconds,
                 self.config.rotation.interval_seconds,
             )
+            boot_start = time.time()
+            self._show_boot("Stationen laden...")
             self._resolve_stations()
 
             if not self.stations:
@@ -157,10 +165,23 @@ class InfoDisplayApp:
 
             self.last_rotation_time = time.time()
 
-            # Initial fetch for weather + all stations
+            # Initial fetch for weather + all stations (non-blocking: main loop retries on failure)
+            self._show_boot("Wetter laden...")
             self._refresh_weather()
+            self._show_boot("Abfahrten laden...")
             for ctx in self.stations:
-                self._refresh_station(ctx)
+                self._refresh_station(ctx, timeout=3)
+                self.display.handle_events()
+            self._show_boot("Hacke-di-hack!")
+
+            # Ensure boot screen is visible for at least 3 seconds total
+            remaining = 3.0 - (time.time() - boot_start)
+            if remaining > 0:
+                # Pump events during the wait so the window stays responsive
+                deadline = time.time() + remaining
+                while time.time() < deadline:
+                    self.display.handle_events()
+                    time.sleep(0.05)
 
             logger.info("Entering main loop")
             running = True

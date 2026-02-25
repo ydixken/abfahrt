@@ -33,10 +33,10 @@ class BVGClient:
             "User-Agent": "abfahrt (https://github.com/ydixken/abfahrt)",
         })
 
-    def get_departures(self, station_id: str) -> list[dict]:
+    def get_departures(self, station_id: str, timeout: int = 10) -> list[dict]:
         """Fetch raw departure dicts from the API.
 
-        GET /stops/{id}/departures with filter params and 10s timeout.
+        GET /stops/{id}/departures with filter params.
         """
         filters = self.config.filters
         # duration=60: look ahead 60 minutes. Transport type filters are
@@ -55,7 +55,7 @@ class BVGClient:
         resp = self.session.get(
             f"{BASE_URL}/stops/{station_id}/departures",
             params=params,
-            timeout=10,
+            timeout=timeout,
         )
         resp.raise_for_status()
         data = resp.json()
@@ -75,22 +75,22 @@ class BVGClient:
         resp.raise_for_status()
         return resp.json()
 
-    def get_station_name(self, station_id: str) -> str:
+    def get_station_name(self, station_id: str, timeout: int = 10) -> str:
         """Get the display name for a station.
 
         GET /stops/{id}
         """
         resp = self.session.get(
             f"{BASE_URL}/stops/{station_id}",
-            timeout=10,
+            timeout=timeout,
         )
         resp.raise_for_status()
         data = resp.json()
         return data.get("name", f"Station {station_id}")
 
-    def fetch_parsed_departures(self, station_id: str) -> list[Departure]:
+    def fetch_parsed_departures(self, station_id: str, timeout: int = 10) -> list[Departure]:
         """Fetch departures, parse, and sort by time."""
-        raw_list = self.get_departures(station_id)
+        raw_list = self.get_departures(station_id, timeout=timeout)
         departures = [parse_departure(raw) for raw in raw_list]
         # Sort by departure time (nearest first). Uses when (real-time)
         # with fallback to planned_when.

@@ -91,3 +91,47 @@ def render_error(message: str, width: int = 1520, height: int = 180) -> Image.Im
     y = (height - text_h) // 2
     draw.text((x, y), message, fill=AMBER, font=font)
     return img
+
+
+def render_boot_screen(status: str, width: int = 1520, height: int = 180) -> Image.Image:
+    """Render a boot/splash screen with the app title, loading status, and version."""
+    from abfahrt import __version__
+
+    img = Image.new("RGB", (width, height), BLACK)
+    draw = ImageDraw.Draw(img)
+
+    def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+        try:
+            return ImageFont.truetype(str(_FONTS_DIR / name), size)
+        except OSError:
+            return ImageFont.load_default()
+
+    title_font = _load_font("JetBrainsMono-ExtraBold.ttf", int(height * 0.40))
+    status_font = _load_font("JetBrainsMono-Medium.ttf", int(height * 0.15))
+    small_font = _load_font("JetBrainsMono-Regular.ttf", int(height * 0.12))
+
+    # Title "Abfahrt!" — centered, upper third
+    title = "Abfahrt!"
+    tb = draw.textbbox((0, 0), title, font=title_font)
+    tx = (width - (tb[2] - tb[0])) // 2
+    ty = int(height * 0.08)
+    draw.text((tx, ty), title, fill=AMBER, font=title_font)
+
+    # Status line — centered below title
+    sb = draw.textbbox((0, 0), status, font=status_font)
+    sx = (width - (sb[2] - sb[0])) // 2
+    sy = ty + (tb[3] - tb[1]) + int(height * 0.08)
+    draw.text((sx, sy), status, fill=AMBER, font=status_font)
+
+    # Version — bottom-right
+    version_str = f"v{__version__}"
+    vb = draw.textbbox((0, 0), version_str, font=small_font)
+    margin = int(height * 0.05)
+    draw.text((width - (vb[2] - vb[0]) - margin, height - (vb[3] - vb[1]) - margin),
+              version_str, fill=AMBER, font=small_font)
+
+    # GitHub URL — bottom-left
+    url = "github.com/ydixken/abfahrt"
+    draw.text((margin, height - (vb[3] - vb[1]) - margin), url, fill=AMBER, font=small_font)
+
+    return img
