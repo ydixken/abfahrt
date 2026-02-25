@@ -176,3 +176,22 @@ class TestDepartureRenderer:
         dep = _make_departure()
         img, _ = renderer.render([dep], "")
         assert isinstance(img, Image.Image)
+
+    def test_render_fetch_ok_false(self):
+        """Verify that render() with fetch_ok=False does not crash."""
+        renderer = DepartureRenderer()
+        dep = _make_departure()
+        img, _ = renderer.render([dep], "Test Station", fetch_ok=False)
+        assert isinstance(img, Image.Image)
+
+    def test_render_empty_fetch_ok_false(self):
+        """Verify that render_empty() with fetch_ok=False does not crash."""
+        renderer = DepartureRenderer()
+        img = renderer.render_empty("Test Station", [], fetch_ok=False)
+        assert isinstance(img, Image.Image)
+
+    def test_render_empty_with_lines_fetch_ok_false(self):
+        """Verify that render_empty() with line filter and fetch_ok=False does not crash."""
+        renderer = DepartureRenderer()
+        img = renderer.render_empty("Test Station", ["S7", "S5"], fetch_ok=False)
+        assert isinstance(img, Image.Image)

@@ -127,6 +127,8 @@ class StationContext:
         departures: Cached list of parsed Departure objects from the last fetch.
         last_fetch: Unix timestamp of the last successful API fetch.
             Initialized to 0.0 so the first refresh always triggers.
+        fetch_ok: True if the last API fetch succeeded, False if it failed.
+            Default True avoids false alarms before the first fetch.
     """
 
     station_id: str
@@ -135,6 +137,7 @@ class StationContext:
     lines: list[str] = field(default_factory=list)
     departures: list[Departure] = field(default_factory=list)
     last_fetch: float = 0.0
+    fetch_ok: bool = True
 
     def needs_refresh(self, interval_seconds: int) -> bool:
         """Check if departures need to be refreshed."""

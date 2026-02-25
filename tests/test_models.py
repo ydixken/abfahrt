@@ -195,6 +195,11 @@ class TestStationContext:
         assert ctx.departures == []
         assert ctx.last_fetch == 0.0
 
+    def test_fetch_ok_default(self):
+        """Verify that fetch_ok defaults to True on a new StationContext."""
+        ctx = StationContext(station_id="900023201", station_name="Savignyplatz")
+        assert ctx.fetch_ok is True
+
     def test_needs_refresh_initial(self):
         """Verify that a newly created context (last_fetch=0) always needs refresh."""
         ctx = StationContext(station_id="900023201", station_name="Savignyplatz")

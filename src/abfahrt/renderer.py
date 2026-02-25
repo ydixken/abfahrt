@@ -226,6 +226,7 @@ class DepartureRenderer:
         walking_minutes: int = 5,
         weather: WeatherData | None = None,
         weather_page: int = 0,
+        fetch_ok: bool = True,
     ) -> tuple[Image.Image, bool]:
         """Render a departure board image.
 
@@ -242,7 +243,7 @@ class DepartureRenderer:
         draw = ImageDraw.Draw(img)
 
         # Draw station name at the top
-        self._draw_station_name(draw, station_name, weather, weather_page)
+        self._draw_station_name(draw, station_name, weather, weather_page, fetch_ok)
 
         # Vertical 1px line between Linie and Ziel columns, matching real
         # BVG aesthetic.
@@ -275,12 +276,13 @@ class DepartureRenderer:
         lines: list[str],
         weather: WeatherData | None = None,
         weather_page: int = 0,
+        fetch_ok: bool = True,
     ) -> Image.Image:
         """Render the station header with a 'no departures' message below."""
         img = Image.new("RGB", (self.width, self.height), BLACK)
         draw = ImageDraw.Draw(img)
 
-        self._draw_station_name(draw, station_name, weather, weather_page)
+        self._draw_station_name(draw, station_name, weather, weather_page, fetch_ok)
 
         # Center the message vertically within the departure area (below
         # the station name header bar) so it appears balanced on screen.
@@ -315,8 +317,9 @@ class DepartureRenderer:
         station_name: str,
         weather: WeatherData | None = None,
         weather_page: int = 0,
+        fetch_ok: bool = True,
     ) -> None:
-        """Draw the station name centered on a full-width amber block, with clock on the right and weather on the left."""
+        """Draw the station name centered on a full-width amber block, with clock on the right, weather on the left, and a connection status dot next to the clock."""
         # Full-width amber rectangle as header background, matching real
         # BVG signage.
         draw.rectangle(
@@ -337,8 +340,29 @@ class DepartureRenderer:
             anchor="lm",
         )
 
+        # Connection status dot at the far right, weather text shifted left
+        # to make room. Dot is always present; when connected it's BLACK
+        # (invisible against amber bar), when disconnected it blinks.
+        dot_radius = max(2, round(3 * self.scale))
+        dot_gap = max(2, round(4 * self.scale))
+        dot_cx = self.width - margin - dot_radius
+        dot_cy = cy
+        if fetch_ok:
+            dot_fill = BLACK
+        else:
+            dot_fill = BLACK if time.time() % BLINK_PERIOD < BLINK_PERIOD / 2 else AMBER
+        draw.ellipse(
+            [
+                (dot_cx - dot_radius, dot_cy - dot_radius),
+                (dot_cx + dot_radius, dot_cy + dot_radius),
+            ],
+            fill=dot_fill,
+        )
+
         # Weather alternates between temperature and precipitation on each
         # station rotation. weather_page % 2 toggles views.
+        # Right-aligned to the left of the status dot.
+        weather_anchor_x = dot_cx - dot_radius - dot_gap
         if weather is not None:
             temp_str = (
                 f"{weather.current_temp:.0f}C"
@@ -350,7 +374,7 @@ class DepartureRenderer:
             else:
                 weather_str = temp_str
             draw.text(
-                (self.width - margin, cy),
+                (weather_anchor_x, cy),
                 weather_str,
                 fill=BLACK,
                 font=self.font_info,

@@ -97,6 +97,7 @@ class InfoDisplayApp:
             ctx.departures = self.client.fetch_parsed_departures(ctx.station_id)
             elapsed = time.time() - t0
             ctx.last_fetch = time.time()
+            ctx.fetch_ok = True
             logger.info(
                 "Fetched %d departures for %s (%.1fs)",
                 len(ctx.departures), ctx.station_name, elapsed,
@@ -105,6 +106,7 @@ class InfoDisplayApp:
             logger.warning(
                 "Failed to fetch departures for %s", ctx.station_name, exc_info=True
             )
+            ctx.fetch_ok = False
             if not ctx.departures:
                 ctx.last_fetch = time.time()
 
@@ -201,12 +203,14 @@ class InfoDisplayApp:
                         visible, ctx.station_name, walk, self.weather,
                         # weather_page cycles with station index to alternate temp/precip display
                         weather_page=self.active_station_index,
+                        fetch_ok=ctx.fetch_ok,
                     )
                 elif ctx.last_fetch > 0:
                     img = self.renderer.render_empty(
                         ctx.station_name, ctx.lines,
                         weather=self.weather,
                         weather_page=self.active_station_index,
+                        fetch_ok=ctx.fetch_ok,
                     )
                 else:
                     img = render_error(

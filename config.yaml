@@ -1,17 +1,17 @@
 stations:
   - id: "900120013"
     name: "Tram Holteistrasse"
-    walking_minutes: 5
-  - id: "900120009"
-    name: "U Samariterstrasse"
-    walking_minutes: 10
+    walking_minutes: 7
+  #- id: "900120009"
+  #  name: "U Samariterstrasse"
+  #  walking_minutes: 10
   - id: "900120003"
     name: "S Ostkreuz"
     walking_minutes: 10
     lines: ["S41", "S42"]
 
 rotation:
-  interval_seconds: 5
+  interval_seconds: 8
 
 display:
   width: 1024
@@ -38,6 +38,6 @@ filters:
   suburban: true
   subway: true
   tram: true
-  bus: true
+  bus: false
   express: true
   regional: true
