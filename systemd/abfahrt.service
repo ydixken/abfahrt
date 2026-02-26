@@ -1,0 +1,17 @@
+[Unit]
+Description=Abfahrt BVG Departure Display
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=root
+WorkingDirectory=/home/pi/abfahrt
+ExecStart=/home/pi/abfahrt/.venv/bin/python -m abfahrt --config config.hardware.yaml
+Restart=on-failure
+RestartSec=5
+WatchdogSec=30
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

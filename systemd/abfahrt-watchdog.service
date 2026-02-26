@@ -1,0 +1,6 @@
+[Unit]
+Description=Abfahrt health check
+
+[Service]
+Type=oneshot
+ExecStart=/home/pi/abfahrt/systemd/healthcheck.sh

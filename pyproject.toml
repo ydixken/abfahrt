@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 hardware = [
     "luma.oled>=3.12.0",
+    "sdnotify>=0.3.0",
 ]
 dev = [
     "pytest>=7.0.0",

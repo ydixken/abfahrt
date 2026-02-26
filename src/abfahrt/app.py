@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import logging
+import signal
 import time
+
+try:
+    import sdnotify
+except ImportError:
+    sdnotify = None
 
 from abfahrt.api import BVGClient
 from abfahrt.config import Config
@@ -66,9 +72,18 @@ class InfoDisplayApp:
         self.last_rotation_time = 0.0
         self.weather: WeatherData | None = None
         self.frame_interval = 1.0 / config.display.fps
+        self._running = False
+        # sd-notify: no-op if sdnotify not installed or NOTIFY_SOCKET not set
+        self._notifier = sdnotify.SystemdNotifier() if sdnotify else None
+
+    def _notify(self, state: str) -> None:
+        """Send a notification to systemd (no-op outside systemd)."""
+        if self._notifier:
+            self._notifier.notify(state)
 
     def _show_boot(self, status: str) -> None:
         """Render and display a boot screen with the given status message."""
+        self._notify(f"STATUS={status}")
         img = render_boot_screen(status, self.config.display.width, self.config.display.height)
         self.display.update(img)
         self.display.handle_events()
@@ -148,6 +163,7 @@ class InfoDisplayApp:
 
     def run(self) -> None:
         """Run the main application loop."""
+        signal.signal(signal.SIGTERM, lambda *_: setattr(self, '_running', False))
         try:
             logger.info(
                 "Starting InfoDisplayApp with %d station(s), refresh=%ds, rotation=%ds",
@@ -183,11 +199,12 @@ class InfoDisplayApp:
                     self.display.handle_events()
                     time.sleep(0.05)
 
+            self._notify("READY=1")
+            self._notify("STATUS=Running")
             logger.info("Entering main loop")
-            running = True
-            while running:
-                running = self.display.handle_events()
-                if not running:
+            self._running = True
+            while self._running:
+                if not self.display.handle_events():
                     break
 
                 # Refresh weather + stations that need it
@@ -244,6 +261,8 @@ class InfoDisplayApp:
                 self._check_rotation(scrolling_done)
 
                 self.display.update(img)
+                self._notify("WATCHDOG=1")
                 time.sleep(self.frame_interval)
         finally:
+            self._notify("STOPPING=1")
             self.display.close()
