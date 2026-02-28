@@ -19,10 +19,39 @@ Multi-station rotation, live weather, per-station line filtering, hurry-zone bli
 
 ## Installation
 
+### System Dependencies
+
+Pygame requires SDL2 and other native libraries to build from source. Install them first:
+
+**Debian / Ubuntu:**
+
+```bash
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libfreetype6-dev
+```
+
+**Raspberry Pi OS (Pi Zero):**
+
+```bash
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libfreetype6-dev
+```
+
+If your system's default GCC isn't found by the build (e.g. it looks for `gcc-12` but you have `gcc-15`), set the `CC` environment variable:
+
+```bash
+CC=gcc pip install -e ".[dev]"
+```
+
+### Python Package Installation
+
 ```bash
 # Clone the repository
 git clone <repo-url>
 cd abfahrt
+
+# Create and activate a virtual environment
+python3 -m venv .
+source bin/activate  # bash/zsh
+# or: source bin/activate.fish  # fish
 
 # Install for local development (Pygame window)
 pip install -e ".[dev]"
